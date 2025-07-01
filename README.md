@@ -11,7 +11,6 @@
 ---
 
 ![Alibai App Showcase](https://i.imgur.com/your_screenshot_or_gif_url.gif)
-> **Note:** Replace the URL above with a real screenshot or, even better, a GIF of your application in action. You can use a tool like [ScreenToGif](https://www.screentogif.com/) or Loom to record a short demonstration.
 
 ## Table of Contents
 - [Project Overview](#project-overview)
@@ -124,10 +123,3 @@ ENCRYPTION_SECRET="another_very_long_random_secret_for_encrypting_keys"
 FREE_TIER_LIMIT=20
 ```
 
-## Contact
-**Arun M** - The Developer
-
--   **GitHub:** [arunm7554](https://github.com/arunm7554)
--   **LinkedIn:** [arunm7554](https://linkedin.com/in/arunm7554)
-
----
