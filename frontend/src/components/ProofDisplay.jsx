@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 const ProofDisplay = ({ proofText }) => {
+    const proofRef = useRef(null);
     // Split the text into lines and parse them
     const lines = proofText.split('\n').map(line => {
         const parts = line.split(':');
@@ -12,18 +13,16 @@ const ProofDisplay = ({ proofText }) => {
     }).filter(line => line.speaker && line.text); // Filter out any empty lines
 
     return (
-        <div className="p-4 bg-gray-200 dark:bg-gray-700 rounded-lg my-2">
-            <p className="text-center font-bold text-sm mb-3">Fake Chat Log</p>
-            <div className="flex flex-col gap-2">
+        <div className="card bg-base-100 p-6 rounded-2xl shadow-lg border border-base-300 w-full my-2 px-6" ref={proofRef}>
+            <div className="space-y-2">
                 {lines.map((line, index) => (
                     <div key={index} className={`chat ${line.isMe ? 'chat-end' : 'chat-start'}`}>
-                        <div className={`chat-bubble ${line.isMe ? 'chat-bubble-primary' : ''}`}>
+                        <div className={`chat-bubble ${line.isMe ? 'chat-bubble-primary' : 'bg-base-300'} w-full`}>
                             {line.text}
                         </div>
                     </div>
                 ))}
             </div>
-            <p className="text-center text-xs opacity-50 mt-3">You can screenshot this as "proof".</p>
         </div>
     );
 };

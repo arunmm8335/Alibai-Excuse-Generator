@@ -1,0 +1,32 @@
+{
+    "name": "alibai-excuse-generator",
+    "version": "1.0.0",
+    "description": "AI-powered excuse generator with React frontend and Node.js backend",
+    "scripts": {
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "dev:backend": "cd backend && npm start",
+        "dev:frontend": "cd frontend && npm run dev",
+        "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+        "build": "cd frontend && npm run build",
+        "test": "cd backend && npm test",
+        "test:watch": "cd backend && npm run test:watch",
+        "docker:build": "docker-compose build",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "docker:logs": "docker-compose logs -f",
+        "start": "cd backend && npm start"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "keywords": [
+        "ai",
+        "excuse-generator",
+        "react",
+        "nodejs",
+        "openai",
+        "twilio"
+    ],
+    "author": "LaunchEd AI Team",
+    "license": "ISC"
+}

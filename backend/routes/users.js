@@ -47,4 +47,39 @@ router.delete('/api-key', auth, async (req, res) => {
     } catch (err) { res.status(500).send('Server Error'); }
 });
 
+router.put('/profile', auth, async (req, res) => {
+    try {
+        const { name, email, profilePic, bio, mobile, github, linkedin, twitter } = req.body;
+
+        // Check if email is already taken by another user
+        if (email) {
+            const existingUser = await User.findOne({ email, _id: { $ne: req.user.id } });
+            if (existingUser) {
+                return res.status(400).json({ msg: 'Email is already in use' });
+            }
+        }
+
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (profilePic !== undefined) updateData.profilePic = profilePic;
+        if (bio !== undefined) updateData.bio = bio;
+        if (mobile !== undefined) updateData.mobile = mobile;
+        if (github !== undefined) updateData.github = github;
+        if (linkedin !== undefined) updateData.linkedin = linkedin;
+        if (twitter !== undefined) updateData.twitter = twitter;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            updateData,
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        res.json({ user: updatedUser, msg: 'Profile updated successfully!' });
+    } catch (err) {
+        console.error('Profile update error:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

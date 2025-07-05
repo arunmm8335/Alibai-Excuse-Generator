@@ -6,11 +6,87 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom theme transitions */
+* {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom scrollbar for dark themes */
+.dark-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--b2));
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--bc) / 0.3);
+    border-radius: 4px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--bc) / 0.5);
+}
+
+/* Glow effects for cyberpunk theme */
+.cyberpunk-glow {
+    box-shadow: 0 0 20px rgba(255, 0, 128, 0.5);
+}
+
+.synthwave-glow {
+    box-shadow: 0 0 20px rgba(231, 121, 193, 0.5);
+}
+
+/* Gradient text effects */
+.gradient-text {
+    background: linear-gradient(45deg, var(--p), var(--s), var(--a));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Theme-specific animations */
+.theme-aiStudio .card {
+    backdrop-filter: blur(10px);
+    background: rgba(30, 41, 59, 0.8);
+}
+
+.theme-cyberpunk .card {
+    border: 1px solid var(--p);
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.3);
+}
+
+.theme-synthwave .card {
+    background: linear-gradient(135deg, var(--b1), var(--b2));
+    border: 1px solid var(--s);
+}
+
 /* Animation for Fake Call Screen */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
+
 .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
 }
@@ -21,11 +97,13 @@
         transform: translateY(20px);
         opacity: 0;
     }
+
     100% {
         transform: translateY(0);
         opacity: 1;
     }
 }
+
 .animate-slide-in-bottom {
     animation: slide-in-bottom 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 }

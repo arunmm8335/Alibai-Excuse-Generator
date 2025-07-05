@@ -10,10 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "axios": "^1.10.0",
+    "html2canvas": "^1.4.1",
     "i18next": "^25.3.0",
     "i18next-browser-languagedetector": "^8.2.0",
     "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.525.0",
     "phosphor-react": "^1.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

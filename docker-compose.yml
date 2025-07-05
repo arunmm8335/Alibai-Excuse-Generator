@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: alibai-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: alibai
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    ports:
+      - "27017:27017"
+    networks:
+      - alibai-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--host", "localhost", "--port", "27017", "--username", "admin", "--password", "password123", "--authenticationDatabase", "admin", "--eval", "print('health check')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: alibai-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/alibai?authSource=admin
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-1234567890abcdef}
+      OPENAI_API_BASE_URL: https://api.chatanywhere.tech/v1
+      FREE_TIER_LIMIT: 10
+      ENCRYPTION_SECRET: your-encryption-secret-key
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - alibai-network
+    healthcheck:
+      test: [ "CMD", "node", "healthcheck.js" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: alibai-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - alibai-network
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+
+  # MongoDB Health Check
+  mongodb-health:
+    image: mongo:6.0
+    container_name: mongodb-health
+    command: >
+      sh -c "
+        until mongosh --host mongodb --port 27017 --username admin --password password123 --authenticationDatabase admin --eval 'print(\"waited for connection\")'
+        do
+          echo 'Waiting for MongoDB...'
+          sleep 2
+        done
+        echo 'MongoDB is ready!'
+      "
+    depends_on:
+      - mongodb
+    networks:
+      - alibai-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  alibai-network:
+    driver: bridge
