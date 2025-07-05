@@ -12,7 +12,12 @@ const app = express();
 connectDB();
 
 // Initialize Middlewares
-app.use(cors());
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production'
+        ? ['https://alibai-frontend.onrender.com', 'https://alibai-excuse-generator.onrender.com']
+        : ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true
+}));
 app.use(express.json({ extended: false }));
 app.use(logger);
 
