@@ -331,6 +331,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-**Made with ❤️ by the Alibai Team**
+**Made with ❤️**
+
 
 *Generate excuses intelligently, communicate effectively!*
