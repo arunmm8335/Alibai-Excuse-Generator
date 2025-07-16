@@ -14,7 +14,7 @@ connectDB();
 // Initialize Middlewares
   app.use(cors({
     origin: [
-      'https://alibai-excuse-generator.vercel.app', // your Vercel frontend
+      'https://alibai-excuse-generator-roys-projects-55a11432.vercel.app', // your Vercel frontend
       'http://localhost:5173',                      // for local dev
       'http://localhost:3000'
     ],
