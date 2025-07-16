@@ -14,10 +14,13 @@ connectDB();
 // Initialize Middlewares
   app.use(cors({
     origin: [
-      'https://alibai-excuse-generator-49h6txazj-roys-projects-55a11432.vercel.app/',
-      // add other allowed origins if needed
+      'https://alibai-excuse-generator.vercel.app', // your Vercel frontend
+      'http://localhost:5173',                      // for local dev
+      'http://localhost:3000'
     ],
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
   }));
 app.use(express.json({ limit: '2mb' })); // or '5mb' if you want to be extra safe
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
