@@ -3,6 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { User, EnvelopeSimple, Image, FloppyDisk, Info, LinkSimple, Phone, UploadSimple, GithubLogo, LinkedinLogo, TwitterLogo, Sparkle } from 'phosphor-react';
+import api from '../api';
 
 const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=128';
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -23,7 +24,7 @@ const EditProfilePage = () => {
         const fetchProfile = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/users/profile', { headers: { 'x-auth-token': token } });
+                const res = await api.get('/users/profile', { headers: { 'x-auth-token': token } });
                 setForm({
                     name: res.data.user.name || '',
                     email: res.data.user.email || '',
@@ -109,7 +110,7 @@ const EditProfilePage = () => {
             ['github', 'linkedin', 'twitter'].forEach(key => {
                 if (!dataToSend[key]) delete dataToSend[key];
             });
-            await axios.put('http://localhost:5000/api/users/profile', dataToSend, { headers: { 'x-auth-token': token } });
+            await api.put('/users/profile', dataToSend, { headers: { 'x-auth-token': token } });
             toast.success('Profile updated successfully!');
             navigate('/profile');
         } catch (err) {
