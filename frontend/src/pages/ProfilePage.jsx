@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -55,7 +55,7 @@ const ProfilePage = () => {
         }
         try {
             const config = { headers: { 'x-auth-token': token } };
-            const res = await axios.get('http://localhost:5000/api/users/profile', config);
+            const res = await api.get('/users/profile', config);
             setProfileData(res.data);
         } catch (err) {
             toast.error("Could not load profile data.");
@@ -90,7 +90,7 @@ const ProfilePage = () => {
                 publicAuthor = profileData.user.name || profileData.user.email || 'anonymous';
             }
             console.log('Publishing with publicAuthor:', publicAuthor);
-            await axios.patch(`http://localhost:5000/api/excuses/${excuseId}/public`, { publicAuthor }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
+            await api.patch(`/excuses/${excuseId}/public`, { publicAuthor }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
             toast.success('Excuse published to Community Wall!');
             // Refresh profile data to update UI
             fetchProfile();
