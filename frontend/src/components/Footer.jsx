@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-base-100/60 backdrop-blur border-t border-base-300/40 shadow-t rounded-t-2xl w-full mt-8">
+    <footer className="bg-base-100 border-t border-base-300 shadow-t w-full py-6">
       {/* Gradient accent bar */}
       <div className="h-1 w-full bg-gradient-to-r from-primary via-secondary to-accent rounded-t-2xl mb-2"></div>
       <div className="max-w-screen-xl mx-auto px-6">

@@ -27,7 +27,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
   };
 
   return (
-    <div className="navbar bg-base-100/60 backdrop-blur border-b border-base-300/40 shadow-lg rounded-b-2xl min-h-[64px]">
+    <div className="navbar fixed top-0 left-0 w-full z-50 bg-base-100 border-b border-base-300/40 shadow-lg min-h-[64px]">
       <div className="flex-1">
         <Link to="/" className="btn btn-ghost text-2xl font-bold">
           <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">

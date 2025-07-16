@@ -28,5 +28,8 @@
         "twilio"
     ],
     "author": "LaunchEd AI Team",
-    "license": "ISC"
+    "license": "ISC",
+    "dependencies": {
+        "string-similarity": "^4.0.4"
+    }
 }

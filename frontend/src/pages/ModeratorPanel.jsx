@@ -56,7 +56,7 @@ const ModeratorPanel = () => {
     };
 
     return (
-        <div className="min-h-screen bg-base-100 flex flex-col items-center p-8">
+        <div className="min-h-screen bg-base-100 flex flex-col items-center p-8 pt-[64px]">
             <h1 className="text-3xl font-bold mb-8 text-error flex items-center gap-2">
                 <FontAwesomeIcon icon={faExclamationTriangle} /> Moderator Panel
             </h1>

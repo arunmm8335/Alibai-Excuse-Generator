@@ -1,0 +1,54 @@
+.vote-bar-pill {
+    display: flex;
+    align-items: center;
+    background: #f5f6fa;
+    border-radius: 999px;
+    padding: 4px 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    gap: 10px;
+    font-size: 1.1rem;
+    min-width: 80px;
+    width: fit-content;
+}
+
+.vote-arrow {
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 50%;
+    transition: background 0.15s, color 0.15s;
+    color: #888;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vote-arrow.selected {
+    background: #e0e7ff;
+    color: #2563eb;
+}
+
+.vote-arrow.up.selected {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.vote-arrow.down.selected {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.vote-arrow:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.vote-count {
+    font-weight: 600;
+    min-width: 24px;
+    text-align: center;
+    color: #222;
+}

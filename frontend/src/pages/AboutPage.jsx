@@ -66,7 +66,7 @@ const AboutPage = () => {
   };
 
   return (
-    <div className="animate-fade-in space-y-24 py-10">
+    <div className="animate-fade-in space-y-24 py-10 pt-[64px]">
 
       {/* Hero Section */}
       <section className="text-center max-w-4xl mx-auto">

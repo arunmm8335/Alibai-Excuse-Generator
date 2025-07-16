@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Excuse = require('../models/Excuse');
 const router = express.Router();
 const CryptoJS = require('crypto-js');
+const { validateProfileUpdate, handleValidationErrors } = require('../middleware/validation');
 
 router.get('/profile', auth, async (req, res) => {
     try {
@@ -47,9 +48,9 @@ router.delete('/api-key', auth, async (req, res) => {
     } catch (err) { res.status(500).send('Server Error'); }
 });
 
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', auth, validateProfileUpdate, handleValidationErrors, async (req, res) => {
     try {
-        const { name, email, profilePic, bio, mobile, github, linkedin, twitter } = req.body;
+        const { name, email, profilePic, bio, mobile, github, linkedin, twitter, smartPreferences } = req.body;
 
         // Check if email is already taken by another user
         if (email) {
@@ -68,6 +69,15 @@ router.put('/profile', auth, async (req, res) => {
         if (github !== undefined) updateData.github = github;
         if (linkedin !== undefined) updateData.linkedin = linkedin;
         if (twitter !== undefined) updateData.twitter = twitter;
+
+        // Handle smartPreferences update (merge with existing)
+        if (smartPreferences) {
+            const user = await User.findById(req.user.id);
+            updateData.smartPreferences = {
+                ...user.smartPreferences.toObject ? user.smartPreferences.toObject() : user.smartPreferences,
+                ...smartPreferences
+            };
+        }
 
         const updatedUser = await User.findByIdAndUpdate(
             req.user.id,

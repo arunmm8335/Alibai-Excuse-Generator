@@ -19,7 +19,7 @@ const SocialIcon = ({ href, title, children }) => (
 
 const ContactPage = () => {
     return (
-        <div className="max-w-4xl mx-auto py-12 px-4 animate-fade-in">
+        <div className="max-w-4xl mx-auto py-12 px-4 animate-fade-in pt-[64px]">
             <h1 className="text-4xl font-bold text-center mb-16">Contact & About the Creator</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
                 {/* --- LEFT SIDE: Meet the Creator --- */}

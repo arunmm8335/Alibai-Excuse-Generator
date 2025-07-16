@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faThumbsUp, faFlag, faUser, faClock, faCommentDots, faChevronDown, faChevronUp, faTrash, faFire } from '@fortawesome/free-solid-svg-icons';
+import { FaFire, FaRegCommentAlt, FaClock, FaUser, FaFlag, FaShare, FaChevronDown, FaChevronUp, FaTrash, FaThumbsUp, FaThumbsDown, FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const scenarioOptions = [
@@ -21,13 +20,22 @@ function isTrending(excuse, trending) {
     return trending.some(e => e._id === excuse._id);
 }
 
+// Helper functions for session-based view tracking
+function getViewedExcusesSet() {
+    const raw = sessionStorage.getItem('viewedExcuses');
+    return new Set(raw ? JSON.parse(raw) : []);
+}
+function saveViewedExcusesSet(set) {
+    sessionStorage.setItem('viewedExcuses', JSON.stringify(Array.from(set)));
+}
+
 const CommunityWallPage = () => {
     const [excuses, setExcuses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [likeLoading, setLikeLoading] = useState({});
-    const [reportLoading, setReportLoading] = useState({});
+    const [dislikeLoading, setDislikeLoading] = useState({});
     const [commentsOpen, setCommentsOpen] = useState({});
     const [comments, setComments] = useState({});
     const [commentInput, setCommentInput] = useState({});
@@ -41,12 +49,109 @@ const CommunityWallPage = () => {
     const [trending, setTrending] = useState([]);
     const [trendingLoading, setTrendingLoading] = useState(true);
     const [reportedExcuses, setReportedExcuses] = useState({});
+    const [commentError, setCommentError] = useState({});
+    // Add state for votes
+    // const [votes, setVotes] = useState({}); // { [excuseId]: { totalVotes, userVote, loading } }
+
+    const viewedExcuses = useRef(getViewedExcusesSet());
 
     useEffect(() => {
         fetchExcuses(page);
         fetchTrending();
         // eslint-disable-next-line
     }, [page]);
+
+    // Increment views for main list
+    useEffect(() => {
+        excuses.forEach(excuse => {
+            if (excuse._id && !viewedExcuses.current.has(excuse._id)) {
+                viewedExcuses.current.add(excuse._id);
+                saveViewedExcusesSet(viewedExcuses.current);
+                axios.patch(`http://localhost:5000/api/excuses/${excuse._id}/view`)
+                    .then(res => {
+                        setExcuses(prev =>
+                            prev.map(e =>
+                                e._id === excuse._id ? { ...e, views: res.data.views } : e
+                            )
+                        );
+                    })
+                    .catch(() => { });
+            }
+        });
+    }, [excuses]);
+
+    // Increment views for trending
+    useEffect(() => {
+        trending.forEach(excuse => {
+            if (excuse._id && !viewedExcuses.current.has(excuse._id)) {
+                viewedExcuses.current.add(excuse._id);
+                saveViewedExcusesSet(viewedExcuses.current);
+                axios.patch(`http://localhost:5000/api/excuses/${excuse._id}/view`)
+                    .then(res => {
+                        setTrending(prev =>
+                            prev.map(e =>
+                                e._id === excuse._id ? { ...e, views: res.data.views } : e
+                            )
+                        );
+                    })
+                    .catch(() => { });
+            }
+        });
+    }, [trending]);
+
+    // On logout, call: sessionStorage.removeItem('viewedExcuses');
+
+    // Fetch votes for all excuses after fetching excuses
+    // useEffect(() => {
+    //     if (excuses.length > 0) {
+    //         const fetchVotes = async () => {
+    //             const token = localStorage.getItem('token');
+    //             const newVotes = {};
+    //             await Promise.all(excuses.map(async (excuse) => {
+    //                 try {
+    //                     const res = await axios.post(`http://localhost:5000/api/excuses/${excuse._id}/vote`, { value: 0 }, { headers: { 'x-auth-token': token } });
+    //                     newVotes[excuse._id] = { totalVotes: res.data.totalVotes, userVote: res.data.userVote, loading: false };
+    //                 } catch {
+    //                     newVotes[excuse._id] = { totalVotes: excuse.likes || 0, userVote: 0, loading: false };
+    //                 }
+    //             }));
+    //             setVotes(newVotes);
+    //         };
+    //         fetchVotes();
+    //     }
+    // }, [excuses]);
+
+    const handleLike = async (excuseId) => {
+        setLikeLoading(prev => ({ ...prev, [excuseId]: true }));
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`http://localhost:5000/api/excuses/${excuseId}/like`, {}, { headers: { 'x-auth-token': token } });
+            setExcuses(prev => prev.map(e =>
+                e._id === excuseId
+                    ? { ...e, likes: res.data.likes, dislikes: res.data.dislikes, userLike: res.data.userLike, userDislike: res.data.userDislike }
+                    : e
+            ));
+        } catch {
+            toast.error('Failed to like. Please try again.');
+        }
+        setLikeLoading(prev => ({ ...prev, [excuseId]: false }));
+    };
+
+    const handleDislike = async (excuseId) => {
+        setDislikeLoading(prev => ({ ...prev, [excuseId]: true }));
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`http://localhost:5000/api/excuses/${excuseId}/dislike`, {}, { headers: { 'x-auth-token': token } });
+            setExcuses(prev => prev.map(e =>
+                e._id === excuseId
+                    ? { ...e, likes: res.data.likes, dislikes: res.data.dislikes, userLike: res.data.userLike, userDislike: res.data.userDislike }
+                    : e
+            ));
+        } catch {
+            toast.error('Failed to dislike. Please try again.');
+        }
+        setDislikeLoading(prev => ({ ...prev, [excuseId]: false }));
+    };
 
     const fetchExcuses = async (pageNum = 1, filters = {}) => {
         setLoading(true);
@@ -80,18 +185,9 @@ const CommunityWallPage = () => {
         setTrendingLoading(false);
     };
 
-    const handleLike = async (id) => {
-        setLikeLoading((prev) => ({ ...prev, [id]: true }));
-        try {
-            await axios.post(`http://localhost:5000/api/excuses/${id}/like`, {}, { headers: { 'x-auth-token': localStorage.getItem('token') } });
-            setExcuses((prev) => prev.map(e => e._id === id ? { ...e, likes: (e.likes || 0) + 1 } : e));
-        } catch { }
-        setLikeLoading((prev) => ({ ...prev, [id]: false }));
-    };
-
     const handleReport = async (id) => {
         if (reportedExcuses[id]) return;
-        setReportLoading((prev) => ({ ...prev, [id]: true }));
+        // setReportLoading((prev) => ({ ...prev, [id]: true })); // This state was removed
         try {
             await axios.post(`http://localhost:5000/api/excuses/${id}/report`, {}, { headers: { 'x-auth-token': localStorage.getItem('token') } });
             setReportedExcuses(prev => ({ ...prev, [id]: true }));
@@ -99,7 +195,7 @@ const CommunityWallPage = () => {
         } catch {
             toast.error('Failed to report. Please try again.');
         }
-        setReportLoading((prev) => ({ ...prev, [id]: false }));
+        // setReportLoading((prev) => ({ ...prev, [id]: false })); // This state was removed
     };
 
     const fetchComments = async (excuseId) => {
@@ -120,7 +216,12 @@ const CommunityWallPage = () => {
 
     const handleAddComment = async (excuseId) => {
         const text = (commentInput[excuseId] || '').trim();
-        if (!text) return;
+        if (text.length < 2 || text.length > 300) {
+            setCommentError(prev => ({ ...prev, [excuseId]: 'Comment must be between 2 and 300 characters.' }));
+            return;
+        } else {
+            setCommentError(prev => ({ ...prev, [excuseId]: '' }));
+        }
         setAddCommentLoading(prev => ({ ...prev, [excuseId]: true }));
         try {
             const asAnonymous = window.confirm('Comment anonymously? OK for anonymous, Cancel for your name.');
@@ -147,11 +248,11 @@ const CommunityWallPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-base-100 flex flex-col items-center p-8">
+        <div className="min-h-screen bg-base-100 flex flex-col items-center p-8 pt-[64px]">
             <h1 className="text-3xl font-bold mb-8 text-primary">Community Excuse Wall</h1>
             <div className="w-full max-w-3xl mb-8">
                 <h2 className="text-xl font-bold mb-2 flex items-center gap-2 text-accent">
-                    <FontAwesomeIcon icon={faFire} className="text-error" /> Trending Excuses
+                    <FaFire className="text-error" /> Trending Excuses
                 </h2>
                 {trendingLoading ? (
                     <span className="loading loading-spinner loading-xs"></span>
@@ -173,9 +274,50 @@ const CommunityWallPage = () => {
                                     <span className="ml-2 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-semibold">Trending</span>
                                 </div>
                                 <div className="text-base-content/80 text-sm mb-2 line-clamp-3">{excuse.excuseText}</div>
-                                <div className="flex items-center gap-2 text-xs text-base-content/60">
-                                    <FontAwesomeIcon icon={faThumbsUp} /> {excuse.likes || 0}
-                                    <FontAwesomeIcon icon={faCommentDots} className="ml-2" /> {excuse.comments?.length || 0}
+                                {/* Trending section action row: */}
+                                <div className="flex items-center gap-4 text-xs text-base-content/60">
+                                    <button
+                                        onClick={() => handleLike(excuse._id)}
+                                        disabled={likeLoading[excuse._id]}
+                                        aria-label="Like"
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            color: excuse.userLike ? '#2563eb' : '#888'
+                                        }}
+                                    >
+                                        <FaThumbsUp size={18} />
+                                        <span>{excuse.likes || 0}</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleDislike(excuse._id)}
+                                        disabled={dislikeLoading[excuse._id]}
+                                        aria-label="Dislike"
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            color: excuse.userDislike ? '#dc2626' : '#888'
+                                        }}
+                                    >
+                                        <FaThumbsDown size={18} />
+                                        <span>{excuse.dislikes || 0}</span>
+                                    </button>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <FaRegCommentAlt color="#888" size={18} />
+                                        {excuse.comments?.length || 0}
+                                    </span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <FaEye color="#888" size={16} />
+                                        {excuse.views || 0}
+                                    </span>
                                 </div>
                             </div>
                         ))}
@@ -238,35 +380,65 @@ const CommunityWallPage = () => {
                                     <span className="ml-2 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-semibold">Trending</span>
                                 )}
                                 <span className="text-xs text-base-content/50 ml-2 flex items-center gap-1">
-                                    <FontAwesomeIcon icon={faClock} />
+                                    <FaClock />
                                     {new Date(excuse.createdAt).toLocaleString()}
                                 </span>
                             </div>
                             <div className="text-base-content/80 text-lg mb-2" style={{ wordBreak: 'break-word' }}>{excuse.excuseText}</div>
-                            <div className="flex items-center gap-4 mt-2">
+                            {/* Pill-shaped action bar for each excuse (replace the old action row) */}
+                            <div className="flex gap-4 mt-2 flex-wrap items-center">
                                 <button
-                                    className={`btn btn-ghost btn-xs flex items-center gap-1 hover:text-success animated-btn${likeLoading[excuse._id] ? ' animated' : ''} focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}
                                     onClick={() => handleLike(excuse._id)}
                                     disabled={likeLoading[excuse._id]}
-                                    aria-label="Like excuse"
-                                    tabIndex={0}
+                                    aria-label="Like"
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        color: excuse.userLike ? '#2563eb' : '#888'
+                                    }}
                                 >
-                                    <FontAwesomeIcon icon={faThumbsUp} />
-                                    {likeLoading[excuse._id] ? <span className="loading loading-spinner loading-xs"></span> : <span>{excuse.likes || 0}</span>}
+                                    <FaThumbsUp size={20} />
+                                    <span>{excuse.likes || 0}</span>
                                 </button>
                                 <button
-                                    className={`btn btn-ghost btn-xs flex items-center gap-1 hover:text-error animated-btn${reportLoading[excuse._id] ? ' animated' : ''} focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}
-                                    onClick={() => handleReport(excuse._id)}
-                                    disabled={reportLoading[excuse._id] || reportedExcuses[excuse._id]}
-                                    aria-label="Report excuse"
-                                    tabIndex={0}
+                                    onClick={() => handleDislike(excuse._id)}
+                                    disabled={dislikeLoading[excuse._id]}
+                                    aria-label="Dislike"
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        color: excuse.userDislike ? '#dc2626' : '#888'
+                                    }}
                                 >
-                                    <FontAwesomeIcon icon={faFlag} />
-                                    {reportLoading[excuse._id] ? <span className="loading loading-spinner loading-xs"></span> : <span>{reportedExcuses[excuse._id] ? 'Reported' : 'Report'}</span>}
+                                    <FaThumbsDown size={20} />
+                                    <span>{excuse.dislikes || 0}</span>
                                 </button>
-                                <span className="ml-auto text-xs text-base-content/60 flex items-center gap-1">
-                                    <FontAwesomeIcon icon={faCommentDots} />
-                                    {excuse.scenario}
+                                <button
+                                    onClick={() => handleToggleComments(excuse._id)}
+                                    aria-label="Comments"
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                >
+                                    <FaRegCommentAlt color="#888" size={18} />
+                                    <span>{comments[excuse._id]?.length || excuse.comments?.length || 0}</span>
+                                </button>
+                                <button
+                                    onClick={() => navigator.share ? navigator.share({ title: 'Excuse', text: excuse.excuseText }) : navigator.clipboard.writeText(excuse.excuseText)}
+                                    aria-label="Share"
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                >
+                                    <FaShare color="#888" size={18} />
+                                </button>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <FaEye color="#888" size={16} />
+                                    {excuse.views || 0}
                                 </span>
                             </div>
                             {/* Comments Section */}
@@ -275,9 +447,9 @@ const CommunityWallPage = () => {
                                     className="btn btn-xs btn-ghost flex items-center gap-1"
                                     onClick={() => handleToggleComments(excuse._id)}
                                 >
-                                    <FontAwesomeIcon icon={faCommentDots} />
+                                    <FaRegCommentAlt />
                                     {commentsOpen[excuse._id] ? 'Hide Comments' : 'Show Comments'}
-                                    <FontAwesomeIcon icon={commentsOpen[excuse._id] ? faChevronUp : faChevronDown} />
+                                    {commentsOpen[excuse._id] ? <FaChevronUp /> : <FaChevronDown />}
                                 </button>
                                 {commentsOpen[excuse._id] && (
                                     <div className="mt-2 bg-base-300 rounded-xl p-4">
@@ -286,39 +458,97 @@ const CommunityWallPage = () => {
                                         ) : (
                                             <>
                                                 {(comments[excuse._id] || []).length === 0 ? (
-                                                    <div className="text-xs text-base-content/60">No comments yet.</div>
+                                                    <div className="text-xs text-base-content/60 italic text-center py-4">No comments yet. Be the first to comment!</div>
                                                 ) : (
-                                                    <ul className="space-y-2 mb-2">
+                                                    <ul className="divide-y divide-base-200 mb-4">
                                                         {comments[excuse._id].map(comment => (
-                                                            <li key={comment._id} className="flex items-start gap-2 text-sm">
-                                                                <span className="font-semibold text-primary">{comment.authorName}</span>
-                                                                <span className="text-base-content/70">{comment.text}</span>
-                                                                <span className="text-xs text-base-content/40 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                                                            <li key={comment._id} className={`flex gap-3 py-3 group items-start ${comment.user === localStorage.getItem('userId') ? 'bg-primary/5' : ''}`.trim()}>
+                                                                <img
+                                                                    src={getAvatar(comment.userObj, comment.authorName)}
+                                                                    alt={comment.authorName}
+                                                                    className="w-7 h-7 rounded-full object-cover border border-base-200 flex-shrink-0 mt-1"
+                                                                    onError={e => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.authorName || 'A')}&background=0D8ABC&color=fff&size=64`; }}
+                                                                />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-semibold text-base-content text-sm truncate">{comment.authorName}</span>
+                                                                        <span className="text-xs text-base-content/40 truncate">{new Date(comment.createdAt).toLocaleString()}</span>
+                                                                    </div>
+                                                                    <div className="text-base-content/80 text-sm mt-1 break-words whitespace-pre-line">{comment.text}</div>
+                                                                </div>
+                                                                {/* For each top-level comment, add a similar action bar below the comment text (reply, like, share, report if needed) */}
+                                                                <div className="flex gap-3 mt-2 flex-wrap">
+                                                                    <button
+                                                                        className="flex items-center gap-2 px-4 py-1 rounded-full bg-base-200 hover:bg-accent/10 text-base-content/80 transition-colors text-sm font-medium"
+                                                                        onClick={() => handleToggleComments(excuse._id)}
+                                                                        aria-label="Show comments"
+                                                                        tabIndex={0}
+                                                                    >
+                                                                        <FaRegCommentAlt />
+                                                                        {comments[excuse._id]?.length || excuse.comments?.length || 0}
+                                                                    </button>
+                                                                    <button
+                                                                        className="flex items-center gap-2 px-4 py-1 rounded-full bg-base-200 hover:bg-error/10 text-base-content/80 transition-colors text-sm font-medium"
+                                                                        onClick={() => handleReport(excuse._id)}
+                                                                        // disabled={reportLoading[excuse._id] || reportedExcuses[excuse._id]} // This state was removed
+                                                                        aria-label="Report excuse"
+                                                                        tabIndex={0}
+                                                                    >
+                                                                        <FaFlag />
+                                                                        {/* {reportedExcuses[excuse._id] ? 'Reported' : 'Report'} */}
+                                                                    </button>
+                                                                    <button
+                                                                        className="flex items-center gap-2 px-4 py-1 rounded-full bg-base-200 hover:bg-info/10 text-base-content/80 transition-colors text-sm font-medium"
+                                                                        onClick={() => navigator.share ? navigator.share({ title: 'Excuse', text: excuse.excuseText }) : navigator.clipboard.writeText(excuse.excuseText)}
+                                                                        aria-label="Share excuse"
+                                                                        tabIndex={0}
+                                                                    >
+                                                                        <FaUser />
+                                                                        Share
+                                                                    </button>
+                                                                </div>
                                                                 {comment.user === localStorage.getItem('userId') && (
                                                                     <button
-                                                                        className="btn btn-ghost btn-xs text-error ml-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                                                        className="btn btn-ghost btn-xs text-error ml-2 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                                                                         onClick={() => handleDeleteComment(excuse._id, comment._id)}
                                                                         disabled={deleteCommentLoading[comment._id]}
                                                                         aria-label="Delete comment"
                                                                         tabIndex={0}
                                                                     >
-                                                                        <FontAwesomeIcon icon={faTrash} />
+                                                                        <FaTrash />
                                                                     </button>
                                                                 )}
                                                             </li>
                                                         ))}
                                                     </ul>
                                                 )}
-                                                <div className="flex gap-2 mt-2">
+                                                <div className="flex gap-2 pt-4 mt-2 border-t border-base-200 items-start bg-transparent">
+                                                    <img
+                                                        src={getAvatar(localStorage.getItem('userId'), localStorage.getItem('userName'))}
+                                                        alt="You"
+                                                        className="w-7 h-7 rounded-full object-cover border border-base-200 flex-shrink-0 mt-1"
+                                                        onError={e => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=You&background=0D8ABC&color=fff&size=64`; }}
+                                                    />
                                                     <input
                                                         className="input input-sm flex-1"
                                                         type="text"
                                                         placeholder="Add a comment..."
                                                         value={commentInput[excuse._id] || ''}
-                                                        onChange={e => setCommentInput(prev => ({ ...prev, [excuse._id]: e.target.value }))}
+                                                        onChange={e => {
+                                                            setCommentInput(prev => ({ ...prev, [excuse._id]: e.target.value }));
+                                                            if (e.target.value.length < 2 || e.target.value.length > 300) {
+                                                                setCommentError(prev => ({ ...prev, [excuse._id]: 'Comment must be between 2 and 300 characters.' }));
+                                                            } else {
+                                                                setCommentError(prev => ({ ...prev, [excuse._id]: '' }));
+                                                            }
+                                                        }}
                                                         onKeyDown={e => { if (e.key === 'Enter') handleAddComment(excuse._id); }}
                                                         disabled={addCommentLoading[excuse._id]}
+                                                        ref={el => {
+                                                            if (commentsOpen[excuse._id] && el) el.focus();
+                                                        }}
                                                     />
+                                                    {commentError[excuse._id] && <div className="text-error text-xs mt-1">{commentError[excuse._id]}</div>}
                                                     <button
                                                         className="btn btn-sm btn-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                                                         onClick={() => handleAddComment(excuse._id)}

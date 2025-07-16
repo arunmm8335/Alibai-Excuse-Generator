@@ -16,6 +16,7 @@ import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
 import CommunityWallPage from './pages/CommunityWallPage';
 import ModeratorPanel from './pages/ModeratorPanel';
+import WelcomePage from './pages/WelcomePage';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -58,7 +59,7 @@ function App() {
       />
       <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} user={user} />
 
-      <main className="flex-grow container mx-auto px-4 py-4">
+      <main className="flex-grow container mx-auto px-4 py-2">
         <Routes>
           {/* --- DEFINITIVE PROTECTED ROUTE --- */}
           {/* The '/' route is now wrapped by ProtectedRoute */}
@@ -68,6 +69,7 @@ function App() {
           </Route>
 
           {/* Publicly accessible routes */}
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/profile" element={<ProfilePage />} />

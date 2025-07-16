@@ -13,7 +13,8 @@ connectDB();
 
 // Initialize Middlewares
 app.use(cors());
-app.use(express.json({ extended: false }));
+app.use(express.json({ limit: '2mb' })); // or '5mb' if you want to be extra safe
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(logger);
 
 // Apply rate limiting only to AI generation routes (temporarily disabled for testing)

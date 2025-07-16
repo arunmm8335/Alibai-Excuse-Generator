@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ProofDisplay from './ProofDisplay';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWandMagicSparkles, faFileShield, faPhone, faMicrophone, faPaperPlane, faCommentDots, faBolt, faGlobe, faCog, faStar, faVolumeUp, faThumbsUp, faThumbsDown, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faWandMagicSparkles, faFileShield, faPhone, faMicrophone, faPaperPlane, faCommentDots, faBolt, faGlobe, faCog, faStar, faVolumeUp, faThumbsUp, faThumbsDown, faDownload, faShareNodes, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import html2canvas from 'html2canvas';
+import imageCompression from 'browser-image-compression';
 // import ExcuseChoices from './ExcuseChoices';
 
 
@@ -39,15 +41,22 @@ const languageToSpeechCode = {
     French: 'fr-FR',
 };
 
-const ChatInterface = ({ settings }) => {
+const toneOptions = [
+    { value: 'neutral', label: 'Neutral' },
+    { value: 'formal', label: 'Formal' },
+    { value: 'casual', label: 'Casual' },
+    { value: 'humorous', label: 'Humorous' },
+    { value: 'apologetic', label: 'Apologetic' },
+    { value: 'assertive', label: 'Assertive' },
+];
+
+const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, messages, addMessageToChat, updateMessages, ...rest }) => {
     // All component state, including for editing
 
     const { context, urgency, language } = settings;
-    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-    const [lastExcuse, setLastExcuse] = useState(null);
     const [excuseChoices, setExcuseChoices] = useState([]);
     const [currentScenario, setCurrentScenario] = useState('');
     const [isListening, setIsListening] = useState(false);
@@ -57,15 +66,27 @@ const ChatInterface = ({ settings }) => {
         context: settings.context || '',
         urgency: settings.urgency || 'medium',
         language: settings.language || 'en',
+        tone: settings.tone || 'neutral',
     });
+    // Keep runSettings in sync with settings prop
+    useEffect(() => {
+        setRunSettings({
+            context: settings.context || '',
+            urgency: settings.urgency || 'medium',
+            language: settings.language || 'en',
+            tone: settings.tone || 'neutral',
+        });
+    }, [settings.context, settings.urgency, settings.language, settings.tone]);
     const chatCardRef = useRef(null);
+    const [inputError, setInputError] = useState('');
+    // Remove local history state; use only props
 
     useEffect(() => {
         // Automatically scroll to the bottom when messages or choices change
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [messages, excuseChoices]);
+    }, [settings]);
 
     // All handler functions are complete and correct
     const speak = (text) => {
@@ -103,40 +124,86 @@ const ChatInterface = ({ settings }) => {
         toast.promise(promise, {
             loading: 'Crafting apology...',
             success: (res) => {
-                setMessages(prev => [...prev, { sender: 'ai', text: res.data.apologyText }]);
+                addMessageToChat({ sender: 'ai', text: res.data.apologyText });
                 return 'Apology generated!';
             },
             error: 'Failed to create apology.'
         }).finally(() => setIsLoading(false));
+    };
+    const [selectedPlatform, setSelectedPlatform] = useState('random');
+    const platformOptions = [
+        { value: 'random', label: 'Random' },
+        { value: 'whatsapp', label: 'WhatsApp' },
+        { value: 'messenger', label: 'Messenger' },
+        { value: 'sms', label: 'SMS' },
+        { value: 'telegram', label: 'Telegram' },
+        { value: 'instagram', label: 'Instagram DM' },
+    ];
+    const [senderName, setSenderName] = useState('Me');
+    const [receiverName, setReceiverName] = useState('Mom');
+    const [senderAvatar, setSenderAvatar] = useState('');
+    const [receiverAvatar, setReceiverAvatar] = useState('');
+    // Add state for uploaded avatar images (data URLs)
+    const [senderAvatarFile, setSenderAvatarFile] = useState('');
+    const [receiverAvatarFile, setReceiverAvatarFile] = useState('');
+
+    // Helper to handle file upload, compress, and convert to data URL
+    const handleAvatarFile = async (e, setAvatarFile, setAvatarUrl) => {
+        const file = e.target.files[0];
+        if (file) {
+            const options = {
+                maxSizeMB: 0.3, // 0.3 MB = 300 KB
+                maxWidthOrHeight: 256, // Optional: resize to max 256px
+                useWebWorker: true
+            };
+            try {
+                const compressedFile = await imageCompression(file, options);
+                if (compressedFile.size > 350 * 1024) {
+                    toast.error('Avatar image is too large after compression. Please choose a smaller image.');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    setAvatarFile(ev.target.result);
+                    setAvatarUrl(''); // Clear URL input if file is uploaded
+                };
+                reader.readAsDataURL(compressedFile);
+            } catch (err) {
+                toast.error('Failed to compress image.');
+            }
+        }
     };
     const handleGenerateProof = () => {
         if (!lastExcuse) {
             toast.error("Please generate an excuse first.");
             return;
         }
-
         // Get the scenario and excuse text from the last excuse
         const scenario = lastExcuse.scenario || currentScenario;
         const excuseText = lastExcuse.excuseText || lastExcuse.text;
-
         console.log('Proof generation debug:', { lastExcuse, scenario, excuseText, currentScenario });
-
         if (!scenario || !excuseText) {
             toast.error("Missing scenario or excuse text. Please generate an excuse first.");
             return;
         }
-
         setIsLoading(true);
+        // Pick a random platform if 'random' is selected
+        let platform = selectedPlatform;
+        if (platform === 'random') {
+            const choices = ['whatsapp', 'messenger', 'sms', 'telegram', 'instagram'];
+            platform = choices[Math.floor(Math.random() * choices.length)];
+        }
+        const avatarToSend = senderAvatarFile || senderAvatar;
+        const receiverAvatarToSend = receiverAvatarFile || receiverAvatar;
         const promise = axios.post('http://localhost:5000/api/excuses/proof',
-            { scenario, excuseText, language: runSettings.language },
+            { scenario, excuseText, language: runSettings.language, platform, senderName, receiverName, senderAvatar: avatarToSend, receiverAvatar: receiverAvatarToSend },
             { headers: { 'x-auth-token': localStorage.getItem('token') } }
         );
-
         toast.promise(promise, {
             loading: 'Generating proof...',
             success: (res) => {
                 console.log('Proof generation success:', res.data);
-                setMessages(prev => [...prev, { sender: 'ai', type: 'proof', text: res.data.proofText }]);
+                addMessageToChat({ sender: 'ai', type: 'proof', text: res.data.proofText, platform, senderName, receiverName, senderAvatar: avatarToSend, receiverAvatar: receiverAvatarToSend });
                 return 'Proof created!';
             },
             error: (err) => {
@@ -174,21 +241,65 @@ const ChatInterface = ({ settings }) => {
             error: (err) => err.response?.data?.msg || "Failed to initiate call."
         }).finally(() => setIsLoading(false));
     };
-    const handleFavorite = (excuseId) => { const promise = axios.patch(`http://localhost:5000/api/excuses/${excuseId}/favorite`, null, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Updating...', success: (res) => { setMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return res.data.isFavorite ? 'Added to favorites!' : 'Removed from favorites.'; }, error: 'Could not update favorite status.', }); };
-    const handleRateExcuse = (excuseId, rating) => { const promise = axios.patch(`http://localhost:5000/api/excuses/${excuseId}/rate`, { rating }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving rating...', success: (res) => { setMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return 'Rating saved! The AI will learn from this.'; }, error: 'Failed to submit rating.', }); };
+    const handleFavorite = (excuseId) => { const promise = axios.patch(`http://localhost:5000/api/excuses/${excuseId}/favorite`, null, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Updating...', success: (res) => { updateMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return res.data.isFavorite ? 'Added to favorites!' : 'Removed from favorites.'; }, error: 'Could not update favorite status.', }); };
+    const handleRateExcuse = (excuseId, rating) => { const promise = axios.patch(`http://localhost:5000/api/excuses/${excuseId}/rate`, { rating }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving rating...', success: (res) => { updateMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return 'Rating saved! The AI will learn from this.'; }, error: 'Failed to submit rating.', }); };
 
     // Centralized function to call the generation API
+
+    // Fuzzy duplicate detection helpers
+    const stopwords = ['i', 'to', 'for', 'the', 'a', 'an', 'of', 'on', 'in', 'at', 'and', 'or', 'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 'with', 'by', 'as', 'it', 'that', 'this', 'so', 'but', 'if', 'then', 'than', 'from', 'do', 'does', 'did', 'not', 'no', 'yes', 'my', 'your', 'our', 'their', 'his', 'her', 'its', 'me', 'you', 'we', 'they', 'he', 'she', 'will', 'would', 'can', 'could', 'should', 'shall', 'may', 'might', 'must'];
+    function preprocess(text) {
+        return text
+            .toLowerCase()
+            .split(/\s+/)
+            .filter(word => !stopwords.includes(word))
+            .join(' ');
+    }
+    function simpleSimilarity(a, b) {
+        if (!a || !b) return 0;
+        const aWords = new Set(a.split(' '));
+        const bWords = new Set(b.split(' '));
+        const intersection = new Set([...aWords].filter(x => bWords.has(x)));
+        return intersection.size / Math.max(aWords.size, bWords.size);
+    }
 
     // --- NEW: Streaming Send Handler ---
     const handleSend = async () => {
         const token = localStorage.getItem('token');
         if (!token) { toast.error('You must be logged in.'); navigate('/login'); return; }
-        if (!input.trim()) return;
+        if (!input.trim()) {
+            setInputError('Please enter a scenario.');
+            return;
+        }
+        if (input.trim().length < 10 || input.trim().length > 500) {
+            setInputError('Scenario must be between 10 and 500 characters.');
+            return;
+        } else {
+            setInputError('');
+        }
+
+        // Fuzzy duplicate check (using history from settings prop)
+        if (settings.history && Array.isArray(settings.history)) {
+            const processedInput = preprocess(input.trim());
+            const historyScenarios = settings.history.map(h => preprocess(h.scenario || ''));
+            let bestMatch = { score: 0, index: -1 };
+            historyScenarios.forEach((scenario, idx) => {
+                const score = simpleSimilarity(processedInput, scenario);
+                if (score > bestMatch.score) {
+                    bestMatch = { score, index: idx };
+                }
+            });
+            if (bestMatch.score > 0.6) {
+                toast('A similar scenario already exists in your history.');
+                return;
+            }
+        }
 
         const userMessage = { sender: 'user', text: input };
         const aiPlaceholderMessage = { sender: 'ai', text: '', isStreaming: true }; // Placeholder for the streaming response
 
-        setMessages(prev => [...prev, userMessage, aiPlaceholderMessage]);
+        addMessageToChat(userMessage);
+        addMessageToChat(aiPlaceholderMessage);
         const scenarioToSave = input;
         setCurrentScenario(scenarioToSave);
         setInput('');
@@ -198,7 +309,7 @@ const ChatInterface = ({ settings }) => {
             const response = await fetch('http://localhost:5000/api/excuses/generate-stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                body: JSON.stringify({ scenario: scenarioToSave, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language })
+                body: JSON.stringify({ scenario: scenarioToSave, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language, tone: runSettings.tone })
             });
 
             if (!response.body) throw new Error("Response body is empty.");
@@ -217,7 +328,7 @@ const ChatInterface = ({ settings }) => {
                     try {
                         const parsed = JSON.parse(data);
                         finalResponseText += parsed.content;
-                        setMessages(prev => prev.map((msg, index) =>
+                        updateMessages(prev => prev.map((msg, index) =>
                             index === prev.length - 1 ? { ...msg, text: finalResponseText } : msg
                         ));
                     } catch (e) { console.error("Error parsing stream data:", data); }
@@ -232,7 +343,7 @@ const ChatInterface = ({ settings }) => {
             // Validate the final response text
             if (!finalResponseText || finalResponseText.trim() === '') {
                 toast.error("No excuse text generated. Please try again.");
-                setMessages(prev => prev.filter(msg => !msg.isStreaming));
+                updateMessages(prev => prev.filter(msg => !msg.isStreaming));
                 setIsLoading(false);
                 return;
             }
@@ -245,11 +356,12 @@ const ChatInterface = ({ settings }) => {
 
             toast.promise(savePromise, {
                 loading: 'Saving to history...',
-                success: (res) => {
+                success: async (res) => {
                     console.log('Save success:', res.data);
                     const savedExcuse = res.data;
-                    setMessages(prev => prev.map((msg, index) => index === prev.length - 1 ? { ...msg, ...savedExcuse, isStreaming: false } : msg));
-                    setLastExcuse({ ...savedExcuse, isStreaming: false });
+                    updateMessages(prev => prev.map((msg, index) => index === prev.length - 1 ? { ...msg, ...savedExcuse, isStreaming: false } : msg));
+                    if (typeof setLastExcuse === 'function') setLastExcuse({ ...savedExcuse, isStreaming: false });
+                    if (typeof fetchHistory === 'function') await fetchHistory(); // Refresh history from backend
                     return "Saved to history!";
                 },
                 error: (err) => {
@@ -260,14 +372,14 @@ const ChatInterface = ({ settings }) => {
 
         } catch (error) {
             toast.error("Failed to get response from AI.");
-            setMessages(prev => prev.filter(msg => !msg.isStreaming));
+            updateMessages(prev => prev.filter(msg => !msg.isStreaming));
             setIsLoading(false);
         }
     };
     const generateExcuseChoices = async (scenarioText) => {
         setIsLoading(true); setExcuseChoices([]);
         try {
-            const res = await axios.post('http://localhost:5000/api/excuses/generate', { scenario: scenarioText, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
+            const res = await axios.post('http://localhost:5000/api/excuses/generate', { scenario: scenarioText, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language, tone: runSettings.tone }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
             if (res.data.choices && res.data.choices.length > 0) {
                 setExcuseChoices(res.data.choices);
             } else { throw new Error("AI did not return any choices."); }
@@ -278,7 +390,7 @@ const ChatInterface = ({ settings }) => {
 
 
 
-    const handleSelectExcuse = (excuseText) => { setIsLoading(true); setExcuseChoices([]); const promise = axios.post('http://localhost:5000/api/excuses/save', { scenario: currentScenario, excuseText, context: runSettings.context }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving your choice...', success: (res) => { const savedExcuseMessage = { sender: 'ai', ...res.data }; setMessages(prev => [...prev, savedExcuseMessage]); setLastExcuse(savedExcuseMessage); return 'Excuse saved!'; }, error: 'Could not save excuse.' }).finally(() => setIsLoading(false)); };
+    const handleSelectExcuse = (excuseText) => { setIsLoading(true); setExcuseChoices([]); const promise = axios.post('http://localhost:5000/api/excuses/save', { scenario: currentScenario, excuseText, context: runSettings.context }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving your choice...', success: (res) => { const savedExcuseMessage = { sender: 'ai', ...res.data }; addMessageToChat(savedExcuseMessage); if (typeof setLastExcuse === 'function') setLastExcuse(savedExcuseMessage); return 'Excuse saved!'; }, error: 'Could not save excuse.' }).finally(() => setIsLoading(false)); };
     const handleVoiceInput = () => { if (!recognition) { return toast.error("Voice recognition is not supported in your browser."); } if (isListening) { recognition.stop(); return; } recognition.start(); recognition.onstart = () => setIsListening(true); recognition.onend = () => setIsListening(false); recognition.onerror = () => { toast.error("Voice recognition failed. Please try again."); setIsListening(false); }; recognition.onresult = (event) => { setInput(event.results[0][0].transcript); }; };
 
     // --- NEW: Simplified Edit Handler ---
@@ -305,14 +417,28 @@ const ChatInterface = ({ settings }) => {
         link.click();
     };
 
+    // Share handlers
+    const handleShareWhatsApp = (excuseText) => {
+        const url = `https://wa.me/?text=${encodeURIComponent(excuseText)}`;
+        window.open(url, '_blank');
+    };
+    const handleShareSMS = (excuseText) => {
+        const url = `sms:?body=${encodeURIComponent(excuseText)}`;
+        window.open(url, '_blank');
+    };
+    const handleShareEmail = (excuseText) => {
+        const url = `mailto:?subject=${encodeURIComponent('Check out this excuse!')}&body=${encodeURIComponent(excuseText)}`;
+        window.open(url, '_blank');
+    };
+
     return (
-        <div className="relative h-[80vh] w-full">
+        <div className="relative h-[90vh] w-full max-w-full px-2 md:px-6">
             <div ref={chatCardRef} className="card bg-base-100/80 backdrop-blur-sm shadow-xl flex flex-col relative border border-base-300 h-full">
                 <h2 className="card-title p-4 border-b border-base-300 text-base-content gradient-text">Alibai Chat</h2>
                 <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
                     {messages.map((msg, index) => (
-                        <div key={index} className={`chat ${msg.sender === 'user' ? 'chat-end' : 'chat-start'} animate-slide-in-bottom`}>
-                            {msg.type === 'proof' ? (<ProofDisplay proofText={msg.text} />) : (
+                        <div key={index} className={`chat ${msg.sender === 'user' ? 'chat-end' : 'chat-start'} animate-slide-in-bottom mb-4`}>
+                            {msg.type === 'proof' ? (<ProofDisplay proofText={msg.text} platform={msg.platform} senderName={msg.senderName} receiverName={msg.receiverName} senderAvatar={msg.senderAvatar} receiverAvatar={msg.receiverAvatar} />) : (
                                 <div className={`chat-bubble max-w-md group relative backdrop-blur-sm px-5 py-3
                                     whitespace-pre-line break-words
                                     ${msg.sender === 'user'
@@ -326,14 +452,25 @@ const ChatInterface = ({ settings }) => {
                                         </button>
                                     )}
                                     {msg.sender === 'ai' && msg._id && !msg.text?.startsWith("Sorry") && (
-                                        <div className="flex gap-3 mt-3 justify-start items-center text-base-content/70">
-                                            <button onClick={() => handleFavorite(msg._id)} className={`hover:scale-125 transition-transform ${msg.isFavorite ? 'text-yellow-400' : 'hover:text-yellow-400'}`} title="Favorite">
-                                                <FontAwesomeIcon icon={faStar} />
-                                            </button>
-                                            <button onClick={() => speak(msg.excuseText)} className="hover:text-base-content hover:scale-125 transition-transform" title="Read Aloud">
-                                                <FontAwesomeIcon icon={faVolumeUp} />
-                                            </button>
-                                            <div className="flex gap-2 items-center border-l border-base-content/20 pl-3 ml-2">
+                                        <>
+                                            <div className="flex gap-3 mt-2 items-center">
+                                                <button onClick={() => handleFavorite(msg._id)} className={`hover:scale-125 transition-transform ${msg.isFavorite ? 'text-yellow-400' : 'hover:text-yellow-400'}`} title="Favorite">
+                                                    <FontAwesomeIcon icon={faStar} />
+                                                </button>
+                                                <button onClick={() => speak(msg.excuseText)} className="hover:text-base-content hover:scale-125 transition-transform" title="Read Aloud">
+                                                    <FontAwesomeIcon icon={faVolumeUp} />
+                                                </button>
+                                                <button onClick={() => handleShareWhatsApp(msg.excuseText)} className="hover:text-green-500 hover:scale-125 transition-transform" title="Share via WhatsApp">
+                                                    <FontAwesomeIcon icon={faWhatsapp} />
+                                                </button>
+                                                <button onClick={() => handleShareSMS(msg.excuseText)} className="hover:text-blue-400 hover:scale-125 transition-transform" title="Share via SMS">
+                                                    <FontAwesomeIcon icon={faSms} />
+                                                </button>
+                                                <button onClick={() => handleShareEmail(msg.excuseText)} className="hover:text-rose-500 hover:scale-125 transition-transform" title="Share via Email">
+                                                    <FontAwesomeIcon icon={faEnvelope} />
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2 items-center border-l border-base-content/20 pl-3 ml-2 mt-2">
                                                 <span className="text-xs">Worked?</span>
                                                 <button onClick={() => handleRateExcuse(msg._id, 1)} disabled={msg.effectiveness !== 0} className={`hover:scale-125 transition-transform ${msg.effectiveness === 1 ? 'text-success' : 'hover:text-success'}`}>
                                                     <FontAwesomeIcon icon={faThumbsUp} />
@@ -342,7 +479,7 @@ const ChatInterface = ({ settings }) => {
                                                     <FontAwesomeIcon icon={faThumbsDown} />
                                                 </button>
                                             </div>
-                                        </div>
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -351,39 +488,8 @@ const ChatInterface = ({ settings }) => {
                     {isLoading && !excuseChoices.length && <span className="loading loading-dots loading-md text-primary self-start ml-4"></span>}
                     {excuseChoices.length > 0 && !isLoading && (<ExcuseChoices choices={excuseChoices} onSelect={handleSelectExcuse} />)}
                 </div>
-                {/* Action Buttons */}
+                {/* Input Bar */}
                 <div className="px-6 py-3 border-t border-base-300/50 bg-base-200/30">
-                    <div className="flex justify-center gap-3 mb-4">
-                        <button
-                            onClick={handleGenerateApology}
-                            className="btn btn-secondary btn-sm gap-2 hover:scale-105 transition-transform"
-                            disabled={!lastExcuse || isLoading}
-                            title="Generate Apology"
-                        >
-                            <FontAwesomeIcon icon={faWandMagicSparkles} />
-                            Apology
-                        </button>
-                        <button
-                            onClick={handleGenerateProof}
-                            className="btn btn-accent btn-sm gap-2 hover:scale-105 transition-transform"
-                            disabled={!lastExcuse || isLoading}
-                            title="Generate Proof"
-                        >
-                            <FontAwesomeIcon icon={faFileShield} />
-                            Proof
-                        </button>
-                        <button
-                            onClick={handleRealCall}
-                            className="btn btn-warning btn-sm gap-2 hover:scale-105 transition-transform"
-                            disabled={!lastExcuse || isLoading}
-                            title="Trigger Real Call"
-                        >
-                            <FontAwesomeIcon icon={faPhone} />
-                            Call
-                        </button>
-                    </div>
-
-                    {/* Input Bar */}
                     <div className="relative">
                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-base-200/80 backdrop-blur-sm border border-base-300/50 shadow-lg">
                             {/* Voice Input Button */}
@@ -394,7 +500,6 @@ const ChatInterface = ({ settings }) => {
                             >
                                 <FontAwesomeIcon icon={faMicrophone} />
                             </button>
-
                             {/* Text Input */}
                             <div className="flex-1 relative">
                                 <textarea
@@ -408,6 +513,11 @@ const ChatInterface = ({ settings }) => {
                                         // Auto-resize textarea
                                         e.target.style.height = 'auto';
                                         e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                                        if (e.target.value.length < 10 || e.target.value.length > 500) {
+                                            setInputError('Scenario must be between 10 and 500 characters.');
+                                        } else {
+                                            setInputError('');
+                                        }
                                     }}
                                     onKeyPress={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -418,8 +528,8 @@ const ChatInterface = ({ settings }) => {
                                     disabled={isLoading}
                                     style={{ minHeight: '44px', maxHeight: '120px' }}
                                 />
+                                {inputError && <div className="text-error text-xs mt-1">{inputError}</div>}
                             </div>
-
                             {/* Send Button */}
                             <button
                                 onClick={handleSend}
@@ -434,52 +544,12 @@ const ChatInterface = ({ settings }) => {
                                 )}
                             </button>
                         </div>
-
                         {/* Character Count */}
                         {input.length > 0 && (
                             <div className="absolute -bottom-6 right-0 text-xs text-base-content/50">
                                 {input.length} characters
                             </div>
                         )}
-                    </div>
-                </div>
-            </div>
-            {/* Only the vertical Run Settings Panel at right corner remains */}
-            <div className="hidden md:flex flex-col gap-4 fixed right-8 top-72 z-30 bg-base-200/90 border border-base-300 rounded-xl shadow-lg p-4 w-60">
-                <h3 className="font-bold text-base-content mb-2 text-lg flex items-center gap-2">
-                    <FontAwesomeIcon icon={faCog} className="text-primary" />
-                    Run Settings
-                </h3>
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                        <FontAwesomeIcon icon={faCommentDots} className="text-primary" />
-                        <input
-                            type="text"
-                            className="input input-bordered input-sm w-full"
-                            placeholder="Context (optional)"
-                            value={runSettings.context}
-                            onChange={e => handleRunSettingChange('context', e.target.value)}
-                        />
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <FontAwesomeIcon icon={faBolt} className="text-warning" />
-                        <select
-                            className="select select-bordered select-sm w-full"
-                            value={runSettings.urgency}
-                            onChange={e => handleRunSettingChange('urgency', e.target.value)}
-                        >
-                            {urgencyOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <FontAwesomeIcon icon={faGlobe} className="text-accent" />
-                        <select
-                            className="select select-bordered select-sm w-full"
-                            value={runSettings.language}
-                            onChange={e => handleRunSettingChange('language', e.target.value)}
-                        >
-                            {languageOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                        </select>
                     </div>
                 </div>
             </div>

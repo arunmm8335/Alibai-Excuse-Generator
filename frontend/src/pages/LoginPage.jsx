@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import BackgroundSelector from '../components/BackgroundSelector';
+import { FaUserCircle, FaEnvelope, FaLock } from 'react-icons/fa';
 
 const LoginPage = ({ setIsLoggedIn }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -20,7 +21,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
       success: (res) => {
         localStorage.setItem('token', res.data.token);
         setIsLoggedIn(true);
-        navigate('/');
+        navigate('/welcome');
         return 'Welcome back!';
       },
       error: (err) => err.response?.data?.msg || 'Invalid credentials. Please try again.',
@@ -28,7 +29,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden pt-[64px] px-2 md:px-4 py-2">
       {/* Background Image with Overlay */}
       {backgroundImage && (
         <div
@@ -53,52 +54,63 @@ const LoginPage = ({ setIsLoggedIn }) => {
       <BackgroundSelector onBackgroundChange={setBackgroundImage} />
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center py-12 px-4">
+      <div className="relative z-10 min-h-screen flex items-center justify-center py-8 px-2 md:px-4">
         <div className="max-w-md w-full space-y-8">
 
           {/* Header */}
-          <div className="text-center">
-            <h2 className="text-5xl font-extrabold mb-4 gradient-text">
+          <div className="text-center flex flex-col items-center justify-center mb-2">
+            <FaUserCircle className="mx-auto mb-2 text-primary drop-shadow-lg" size={56} aria-label="Login Icon" />
+            <h2 className="text-5xl font-extrabold mb-2 text-primary drop-shadow-lg" style={{ letterSpacing: '0.02em', textShadow: '0 2px 8px rgba(0,0,0,0.25)', color: 'var(--tw-prose-invert, #2563eb)' }}>
               Welcome Back
             </h2>
-            <p className="text-lg text-base-content/80">
+            <p className="text-lg text-base-content/80 mb-2">
               Access your excuse history and personalized suggestions.
             </p>
           </div>
 
           {/* Form Card */}
-          <div className="card bg-base-200/20 backdrop-blur-md p-8 shadow-2xl border border-base-300/30">
+          <div className="card bg-base-200/20 backdrop-blur-md p-6 md:p-8 shadow-2xl border border-base-300/30 w-full max-w-full">
             <form className="space-y-6" onSubmit={onSubmit}>
               <div className="space-y-4">
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text text-base-content/90 font-medium">Email address</span>
                   </label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="email@example.com"
-                    className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors"
-                    required
-                    onChange={onChange}
-                    aria-label="Email address"
-                    tabIndex={0}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary text-xl z-10 pointer-events-none">
+                      <FaEnvelope />
+                    </span>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="email@example.com"
+                      className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors pl-10"
+                      required
+                      onChange={onChange}
+                      aria-label="Email address"
+                      tabIndex={0}
+                    />
+                  </div>
                 </div>
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text text-base-content/90 font-medium">Password</span>
                   </label>
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors"
-                    required
-                    onChange={onChange}
-                    aria-label="Password"
-                    tabIndex={0}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary text-xl z-10 pointer-events-none">
+                      <FaLock />
+                    </span>
+                    <input
+                      type="password"
+                      name="password"
+                      placeholder="Password"
+                      className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors pl-10"
+                      required
+                      onChange={onChange}
+                      aria-label="Password"
+                      tabIndex={0}
+                    />
+                  </div>
                 </div>
               </div>
 

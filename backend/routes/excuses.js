@@ -3,6 +3,7 @@ const auth = require('../middleware/authMiddleware');
 const getOpenAIClient = require('../middleware/aiClient'); // Import the new centralized middleware
 const Excuse = require('../models/Excuse');
 const router = express.Router();
+const { validateComment, handleValidationErrors } = require('../middleware/validation');
 
 
 // @route   POST /api/excuses/generate-stream
@@ -111,7 +112,7 @@ router.post('/apology', [auth, getOpenAIClient], async (req, res) => {
 // @desc    Generate proof using the correct AI client from middleware
 // @access  Private
 router.post('/proof', [auth, getOpenAIClient], async (req, res) => {
-    const { scenario, excuseText, language } = req.body;
+    const { scenario, excuseText, language, platform, senderName, receiverName } = req.body;
 
     // Validate required fields
     if (!scenario || !excuseText) {
@@ -121,9 +122,20 @@ router.post('/proof', [auth, getOpenAIClient], async (req, res) => {
         });
     }
 
-    console.log('Proof generation request:', { scenario, excuseText, language });
+    console.log('Proof generation request:', { scenario, excuseText, language, platform });
 
-    const systemPrompt = `You are a scriptwriter. Create a short, realistic text message conversation (3-5 lines) between 'Me' and another person (e.g., 'Mom', 'Boss') that supports an excuse. Format as a script, with each line starting with the speaker's name then a colon. Example: 'Mom: Are you okay?'. Generate the dialogue in ${language || 'English'}.`;
+    const meName = senderName && senderName.trim() ? senderName.trim() : 'Me';
+    const otherName = receiverName && receiverName.trim() ? receiverName.trim() : 'Mom';
+
+    let stylePrompt = '';
+    if (platform === 'whatsapp') stylePrompt = `Format as a WhatsApp chat between '${meName}' and '${otherName}'. Each line must be: Speaker: Message text. Make the conversation sound natural and realistic, as if two real people are chatting. Do not include timestamps or line numbers. Do not add any extra commentary.`;
+    else if (platform === 'messenger') stylePrompt = `Format as a Messenger chat between '${meName}' and '${otherName}'. Each line must be: Speaker: Message text. Make the conversation sound natural and realistic, as if two real people are chatting. Do not include timestamps or line numbers. Do not add any extra commentary.`;
+    else if (platform === 'sms') stylePrompt = `Format as an SMS between '${meName}' and '${otherName}'. Each line must be: Speaker: Message text. Make the conversation sound natural and realistic, as if two real people are chatting. Do not include timestamps or line numbers. Do not add any extra commentary.`;
+    else if (platform === 'telegram') stylePrompt = `Format as a Telegram chat between '${meName}' and '${otherName}'. Each line must be: Speaker: Message text. Make the conversation sound natural and realistic, as if two real people are chatting. Do not include timestamps or line numbers. Do not add any extra commentary.`;
+    else if (platform === 'instagram') stylePrompt = `Format as an Instagram DM chat between '${meName}' and '${otherName}'. Each line must be: Speaker: Message text. Make the conversation sound natural and realistic, as if two real people are chatting. Do not include timestamps or line numbers. Do not add any extra commentary.`;
+    else stylePrompt = `Format as a generic chat between '${meName}' and '${otherName}'. Each line must be: Speaker: Message text. Make the conversation sound natural and realistic, as if two real people are chatting. Do not include timestamps or line numbers. Do not add any extra commentary.`;
+
+    const systemPrompt = `You are a scriptwriter. Create a short, realistic chat (3-5 lines) between '${meName}' and '${otherName}' that supports an excuse. ${stylePrompt} Generate the dialogue in ${language || 'English'}.`;
     const userPrompt = `The situation: "${scenario}". The excuse used: "${excuseText}". Write a fake chat log for this.`;
 
     try {
@@ -177,8 +189,8 @@ router.post('/save', auth, async (req, res) => {
         if (!excuseText || typeof excuseText !== 'string') {
             throw new Error('Invalid excuseText: must be a non-empty string');
         }
-        if (!context || !['work', 'school', 'social', 'family'].includes(context)) {
-            throw new Error('Invalid context: must be one of work, school, social, family');
+        if (!context || !['work', 'school', 'social', 'family', 'dating', 'travel', 'health', 'legal', 'tech', 'other'].includes(context)) {
+            throw new Error('Invalid context: must be one of work, school, social, family, dating, travel, health, legal, tech, other');
         }
 
         const newExcuse = new Excuse({
@@ -231,6 +243,18 @@ router.patch('/:id/rate', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => { try { const excuse = await Excuse.findById(req.params.id); if (!excuse) { return res.status(404).json({ msg: 'Excuse not found' }); } if (excuse.user.toString() !== req.user.id) { return res.status(401).json({ msg: 'User not authorized' }); } await excuse.deleteOne(); res.json({ msg: 'Excuse removed' }); } catch (err) { res.status(500).send('Server Error'); } });
 router.get('/pattern', auth, async (req, res) => { try { const userHistory = await Excuse.find({ user: req.user.id }); if (userHistory.length < 3) return res.json({ suggestion: null }); const keywordMap = { sick: ["sick", "unwell", "fever"], appointment: ["appointment", "doctor"], family: ["family", "emergency"], }; const dayCounts = {}; const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; userHistory.forEach(excuse => { const day = daysOfWeek[new Date(excuse.createdAt).getDay()]; if (!dayCounts[day]) dayCounts[day] = {}; for (const category in keywordMap) { if (keywordMap[category].some(k => excuse.scenario.toLowerCase().includes(k))) { dayCounts[day][category] = (dayCounts[day][category] || 0) + 1; } } }); let suggestion = null; for (const day in dayCounts) { for (const category in dayCounts[day]) { if (dayCounts[day][category] >= 3) { suggestion = `We've noticed you often need an excuse about being '${category}' on ${day}s. Need help preparing one?`; break; } } if (suggestion) break; } res.json({ suggestion }); } catch (err) { res.status(500).send('Server Error'); } });
 
+// Helper to add like/dislike info to an excuse
+function addLikeDislikeInfo(excuse, userId) {
+    return {
+        ...excuse.toObject(),
+        likes: excuse.likedBy.length,
+        dislikes: excuse.dislikedBy.length,
+        userLike: userId ? excuse.likedBy.map(id => id.toString()).includes(userId) : false,
+        userDislike: userId ? excuse.dislikedBy.map(id => id.toString()).includes(userId) : false,
+        views: excuse.views || 0
+    };
+}
+
 // @route   GET /api/excuses/public
 // @desc    Get public, active excuses for the community wall (paginated, filterable)
 // @access  Public
@@ -265,26 +289,89 @@ router.get('/public', async (req, res) => {
             .limit(limit)
             .select('-reports') // Hide reports count from public
             .populate('user', 'name profilePic');
-        res.json({ excuses, total, page, totalPages: Math.ceil(total / limit) });
+
+        // Try to get userId from token if present
+        let userId = null;
+        if (req.headers['x-auth-token']) {
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(req.headers['x-auth-token'], process.env.JWT_SECRET);
+                userId = decoded.id;
+            } catch { }
+        }
+
+        res.json({
+            excuses: excuses.map(e => addLikeDislikeInfo(e, userId)),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (err) {
         res.status(500).json({ msg: 'Server error fetching public excuses.' });
     }
 });
 
-// @route   POST /api/excuses/:id/like
-// @desc    Like/upvote a public excuse
-// @access  Private
+// Like endpoint with per-user logic
 router.post('/:id/like', auth, async (req, res) => {
     try {
         const excuse = await Excuse.findById(req.params.id);
         if (!excuse || !excuse.isPublic || excuse.status !== 'active') {
             return res.status(404).json({ msg: 'Excuse not found or not public.' });
         }
-        excuse.likes += 1;
+        const userId = req.user.id;
+        // Remove from dislikedBy if present
+        excuse.dislikedBy = excuse.dislikedBy.filter(id => id.toString() !== userId);
+        const liked = excuse.likedBy.map(id => id.toString()).includes(userId);
+        if (liked) {
+            // Undo like
+            excuse.likedBy = excuse.likedBy.filter(id => id.toString() !== userId);
+        } else {
+            // Add to likedBy if not present
+            excuse.likedBy.push(userId);
+        }
+        // Ensure no duplicates
+        excuse.likedBy = [...new Set(excuse.likedBy.map(id => id.toString()))].map(id => excuse.likedBy.find(objId => objId.toString() === id));
         await excuse.save();
-        res.json({ likes: excuse.likes });
+        res.json({
+            likes: excuse.likedBy.length,
+            dislikes: excuse.dislikedBy.length,
+            userLike: !liked,
+            userDislike: false
+        });
     } catch (err) {
         res.status(500).json({ msg: 'Server error liking excuse.' });
+    }
+});
+
+// Dislike endpoint with per-user logic
+router.post('/:id/dislike', auth, async (req, res) => {
+    try {
+        const excuse = await Excuse.findById(req.params.id);
+        if (!excuse || !excuse.isPublic || excuse.status !== 'active') {
+            return res.status(404).json({ msg: 'Excuse not found or not public.' });
+        }
+        const userId = req.user.id;
+        // Remove from likedBy if present
+        excuse.likedBy = excuse.likedBy.filter(id => id.toString() !== userId);
+        const disliked = excuse.dislikedBy.map(id => id.toString()).includes(userId);
+        if (disliked) {
+            // Undo dislike
+            excuse.dislikedBy = excuse.dislikedBy.filter(id => id.toString() !== userId);
+        } else {
+            // Add to dislikedBy if not present
+            excuse.dislikedBy.push(userId);
+        }
+        // Ensure no duplicates
+        excuse.dislikedBy = [...new Set(excuse.dislikedBy.map(id => id.toString()))].map(id => excuse.dislikedBy.find(objId => objId.toString() === id));
+        await excuse.save();
+        res.json({
+            likes: excuse.likedBy.length,
+            dislikes: excuse.dislikedBy.length,
+            userLike: false,
+            userDislike: !disliked
+        });
+    } catch (err) {
+        res.status(500).json({ msg: 'Server error disliking excuse.' });
     }
 });
 
@@ -345,7 +432,7 @@ router.get('/:id/comments', async (req, res) => {
 // @route   POST /api/excuses/:id/comments
 // @desc    Add a comment to an excuse
 // @access  Private
-router.post('/:id/comments', auth, async (req, res) => {
+router.post('/:id/comments', auth, validateComment, handleValidationErrors, async (req, res) => {
     try {
         const { text, authorName } = req.body;
         if (!text || typeof text !== 'string' || !text.trim()) {
@@ -398,7 +485,18 @@ router.get('/trending', async (req, res) => {
             .limit(5)
             .select('-reports')
             .populate('user', 'name profilePic');
-        res.json({ trending });
+
+        // Try to get userId from token if present
+        let userId = null;
+        if (req.headers['x-auth-token']) {
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(req.headers['x-auth-token'], process.env.JWT_SECRET);
+                userId = decoded.id;
+            } catch { }
+        }
+
+        res.json({ trending: trending.map(e => addLikeDislikeInfo(e, userId)) });
     } catch (err) {
         res.status(500).json({ msg: 'Server error fetching trending excuses.' });
     }
@@ -469,6 +567,21 @@ router.delete('/:excuseId/comments/:commentId/mod', auth, requireModerator, asyn
         res.json({ msg: 'Comment removed by moderator' });
     } catch (err) {
         res.status(500).json({ msg: 'Server error removing comment.' });
+    }
+});
+
+// @route   PATCH /api/excuses/:id/view
+// @desc    Increment the views count for an excuse
+// @access  Public
+router.patch('/:id/view', async (req, res) => {
+    try {
+        const excuse = await Excuse.findById(req.params.id);
+        if (!excuse) return res.status(404).json({ msg: 'Excuse not found' });
+        excuse.views = (excuse.views || 0) + 1;
+        await excuse.save();
+        res.json({ views: excuse.views });
+    } catch (err) {
+        res.status(500).json({ msg: 'Server error incrementing views.' });
     }
 });
 
