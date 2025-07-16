@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationTriangle, faEyeSlash, faUndo, faUser, faThumbsUp, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 
@@ -23,7 +23,7 @@ const ModeratorPanel = () => {
     const fetchReported = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/excuses/reported', {
+            const res = await api.get('/excuses/reported', {
                 headers: { 'x-auth-token': localStorage.getItem('token') }
             });
             setReported(res.data.reported);
@@ -36,7 +36,7 @@ const ModeratorPanel = () => {
     const handleHide = async (id) => {
         setActionLoading(prev => ({ ...prev, [id]: 'hide' }));
         try {
-            await axios.patch(`http://localhost:5000/api/excuses/${id}/hide`, {}, {
+            await api.patch(`/excuses/${id}/hide`, {}, {
                 headers: { 'x-auth-token': localStorage.getItem('token') }
             });
             fetchReported();
@@ -47,7 +47,7 @@ const ModeratorPanel = () => {
     const handleRestore = async (id) => {
         setActionLoading(prev => ({ ...prev, [id]: 'restore' }));
         try {
-            await axios.patch(`http://localhost:5000/api/excuses/${id}/restore`, {}, {
+            await api.patch(`/excuses/${id}/restore`, {}, {
                 headers: { 'x-auth-token': localStorage.getItem('token') }
             });
             fetchReported();
