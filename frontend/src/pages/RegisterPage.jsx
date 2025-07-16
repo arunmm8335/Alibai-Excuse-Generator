@@ -4,6 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import BackgroundSelector from '../components/BackgroundSelector';
 import { FaUserPlus, FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import api from '../api';
 
 const RegisterPage = ({ setIsLoggedIn }) => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -18,7 +19,7 @@ const RegisterPage = ({ setIsLoggedIn }) => {
       toast.error("Password must be at least 6 characters long.");
       return;
     }
-    const promise = axios.post('http://localhost:5000/api/auth/register', formData);
+    const promise = api.post('/auth/register', formData);
 
     toast.promise(promise, {
       loading: 'Creating your account...',
