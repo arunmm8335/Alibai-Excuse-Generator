@@ -13,11 +13,13 @@ connectDB();
 
 // Initialize Middlewares
  // const cors = require('cors');
+
 app.use(cors({
   origin: [
-    'https://alibai-excuse-generator.vercel.app', // Vercel frontend
-    'http://localhost:5173',                      // Local dev
-    'http://localhost:3000'                       // Local dev (React default)
+    'https://alibai-excuse-generator.vercel.app',
+    'https://alibai-excuse-generator-oix48jmsa-roys-projects-55a11432.vercel.app', // <-- add this!
+    'http://localhost:5173',
+    'http://localhost:3000'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
