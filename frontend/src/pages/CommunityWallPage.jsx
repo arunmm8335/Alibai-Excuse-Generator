@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { FaFire, FaRegCommentAlt, FaClock, FaUser, FaFlag, FaShare, FaChevronDown, FaChevronUp, FaTrash, FaThumbsUp, FaThumbsDown, FaEye } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import api from '../api';
 
 const scenarioOptions = [
     '', 'work', 'school', 'social', 'family'
@@ -67,7 +68,7 @@ const CommunityWallPage = () => {
             if (excuse._id && !viewedExcuses.current.has(excuse._id)) {
                 viewedExcuses.current.add(excuse._id);
                 saveViewedExcusesSet(viewedExcuses.current);
-                axios.patch(`http://localhost:5000/api/excuses/${excuse._id}/view`)
+                api.patch(`/excuses/${excuse._id}/view`)
                     .then(res => {
                         setExcuses(prev =>
                             prev.map(e =>
@@ -86,7 +87,7 @@ const CommunityWallPage = () => {
             if (excuse._id && !viewedExcuses.current.has(excuse._id)) {
                 viewedExcuses.current.add(excuse._id);
                 saveViewedExcusesSet(viewedExcuses.current);
-                axios.patch(`http://localhost:5000/api/excuses/${excuse._id}/view`)
+                api.patch(`/excuses/${excuse._id}/view`)
                     .then(res => {
                         setTrending(prev =>
                             prev.map(e =>
@@ -125,7 +126,7 @@ const CommunityWallPage = () => {
         setLikeLoading(prev => ({ ...prev, [excuseId]: true }));
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`http://localhost:5000/api/excuses/${excuseId}/like`, {}, { headers: { 'x-auth-token': token } });
+            const res = await api.post(`/excuses/${excuseId}/like`, {}, { headers: { 'x-auth-token': token } });
             setExcuses(prev => prev.map(e =>
                 e._id === excuseId
                     ? { ...e, likes: res.data.likes, dislikes: res.data.dislikes, userLike: res.data.userLike, userDislike: res.data.userDislike }
@@ -141,7 +142,7 @@ const CommunityWallPage = () => {
         setDislikeLoading(prev => ({ ...prev, [excuseId]: true }));
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`http://localhost:5000/api/excuses/${excuseId}/dislike`, {}, { headers: { 'x-auth-token': token } });
+            const res = await api.post(`/excuses/${excuseId}/dislike`, {}, { headers: { 'x-auth-token': token } });
             setExcuses(prev => prev.map(e =>
                 e._id === excuseId
                     ? { ...e, likes: res.data.likes, dislikes: res.data.dislikes, userLike: res.data.userLike, userDislike: res.data.userDislike }
@@ -164,7 +165,7 @@ const CommunityWallPage = () => {
                 ...(author && { author }),
                 ...(minLikes && { minLikes })
             });
-            const res = await axios.get(`http://localhost:5000/api/excuses/public?${params.toString()}`);
+            const res = await api.get(`/excuses/public?${params.toString()}`);
             setExcuses(res.data.excuses);
             setTotalPages(res.data.totalPages);
         } catch (err) {
@@ -177,7 +178,7 @@ const CommunityWallPage = () => {
     const fetchTrending = async () => {
         setTrendingLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/excuses/trending');
+            const res = await api.get('/excuses/trending');
             setTrending(res.data.trending);
         } catch {
             setTrending([]);
@@ -189,7 +190,7 @@ const CommunityWallPage = () => {
         if (reportedExcuses[id]) return;
         // setReportLoading((prev) => ({ ...prev, [id]: true })); // This state was removed
         try {
-            await axios.post(`http://localhost:5000/api/excuses/${id}/report`, {}, { headers: { 'x-auth-token': localStorage.getItem('token') } });
+            await api.post(`/excuses/${id}/report`, {}, { headers: { 'x-auth-token': localStorage.getItem('token') } });
             setReportedExcuses(prev => ({ ...prev, [id]: true }));
             toast.success('Reported for moderation. Thank you!');
         } catch {
@@ -201,7 +202,7 @@ const CommunityWallPage = () => {
     const fetchComments = async (excuseId) => {
         setCommentLoading(prev => ({ ...prev, [excuseId]: true }));
         try {
-            const res = await axios.get(`http://localhost:5000/api/excuses/${excuseId}/comments`);
+            const res = await api.get(`/excuses/${excuseId}/comments`);
             setComments(prev => ({ ...prev, [excuseId]: res.data.comments }));
         } catch {
             setComments(prev => ({ ...prev, [excuseId]: [] }));
@@ -226,7 +227,7 @@ const CommunityWallPage = () => {
         try {
             const asAnonymous = window.confirm('Comment anonymously? OK for anonymous, Cancel for your name.');
             const authorName = asAnonymous ? 'anonymous' : (localStorage.getItem('userName') || 'anonymous');
-            const res = await axios.post(`http://localhost:5000/api/excuses/${excuseId}/comments`, { text, authorName }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
+            const res = await api.post(`/excuses/${excuseId}/comments`, { text, authorName }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
             setComments(prev => ({ ...prev, [excuseId]: [...(prev[excuseId] || []), res.data.comment] }));
             setCommentInput(prev => ({ ...prev, [excuseId]: '' }));
         } catch { }
@@ -236,7 +237,7 @@ const CommunityWallPage = () => {
     const handleDeleteComment = async (excuseId, commentId) => {
         setDeleteCommentLoading(prev => ({ ...prev, [commentId]: true }));
         try {
-            await axios.delete(`http://localhost:5000/api/excuses/${excuseId}/comments/${commentId}`, { headers: { 'x-auth-token': localStorage.getItem('token') } });
+            await api.delete(`/excuses/${excuseId}/comments/${commentId}`, { headers: { 'x-auth-token': localStorage.getItem('token') } });
             setComments(prev => ({ ...prev, [excuseId]: (prev[excuseId] || []).filter(c => c._id !== commentId) }));
         } catch { }
         setDeleteCommentLoading(prev => ({ ...prev, [commentId]: false }));
