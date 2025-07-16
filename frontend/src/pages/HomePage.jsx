@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWandMagicSparkles, faFileShield, faPhone } from '@fortawesome/free-solid-svg-icons';
 import imageCompression from 'browser-image-compression';
 import toast from 'react-hot-toast';
+import api from '../api';
 
 const HomePage = () => {
     // State is "lifted up" to this parent component to be shared
@@ -23,7 +24,7 @@ const HomePage = () => {
         const token = localStorage.getItem('token');
         if (!token) { setIsLoading(false); return; }
         try {
-            const res = await axios.get('http://localhost:5000/api/excuses/history', { headers: { 'x-auth-token': token } });
+            const res = await api.get('/excuses/history', { headers: { 'x-auth-token': token } });
             setHistory(res.data);
         } catch { }
         setIsLoading(false);
@@ -106,7 +107,7 @@ const HomePage = () => {
             return;
         }
         setSidebarLoading(true);
-        const promise = axios.post('http://localhost:5000/api/excuses/apology',
+        const promise = api.post('/excuses/apology',
             { scenario, excuseText, ...runSettings },
             { headers: { 'x-auth-token': localStorage.getItem('token') } }
         );
@@ -138,7 +139,7 @@ const HomePage = () => {
         }
         const avatarToSend = senderAvatarFile || senderAvatar;
         const receiverAvatarToSend = receiverAvatarFile || receiverAvatar;
-        const promise = axios.post('http://localhost:5000/api/excuses/proof',
+        const promise = api.post('/excuses/proof',
             { scenario, excuseText, ...runSettings, platform, senderName, receiverName, senderAvatar: avatarToSend, receiverAvatar: receiverAvatarToSend },
             { headers: { 'x-auth-token': localStorage.getItem('token') } }
         );
@@ -166,7 +167,7 @@ const HomePage = () => {
         const userPhoneNumber = prompt("Enter your VERIFIED phone number (E.164 format, e.g., +14155552671):");
         if (!userPhoneNumber) return;
         setSidebarLoading(true);
-        const promise = axios.post('http://localhost:5000/api/calls/trigger',
+        const promise = api.post('/calls/trigger',
             { userPhoneNumber, excuseText },
             { headers: { 'x-auth-token': localStorage.getItem('token') } }
         );
