@@ -33,6 +33,11 @@ app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Add a root route for '/'
+app.get('/', (req, res) => {
+    res.json({ message: 'Alibai Excuse Generator API is running!', status: 'OK' });
+});
+
 // Error handling middleware (must be last)
 app.use(errorLogger);
 app.use(errorHandler);
