@@ -12,16 +12,17 @@ const app = express();
 connectDB();
 
 // Initialize Middlewares
-  app.use(cors({
-    origin: [
-      'https://alibai-excuse-generator-roys-projects-55a11432.vercel.app', // your Vercel frontend
-      'http://localhost:5173',                      // for local dev
-      'http://localhost:3000'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
-  }));
+ // const cors = require('cors');
+app.use(cors({
+  origin: [
+    'https://alibai-excuse-generator.vercel.app', // Vercel frontend
+    'http://localhost:5173',                      // Local dev
+    'http://localhost:3000'                       // Local dev (React default)
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+}));
 app.use(express.json({ limit: '2mb' })); // or '5mb' if you want to be extra safe
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(logger);
