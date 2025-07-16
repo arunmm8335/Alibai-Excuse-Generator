@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import toast from 'react-hot-toast';
 import BackgroundSelector from '../components/BackgroundSelector';
 import { FaUserCircle, FaEnvelope, FaLock } from 'react-icons/fa';
@@ -14,7 +14,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
 
   const onSubmit = async e => {
     e.preventDefault();
-    const promise = axios.post('http://localhost:5000/api/auth/login', formData);
+    const promise = api.post('/auth/login', formData);
 
     toast.promise(promise, {
       loading: 'Logging in...',
