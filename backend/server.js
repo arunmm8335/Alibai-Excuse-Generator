@@ -12,7 +12,13 @@ const app = express();
 connectDB();
 
 // Initialize Middlewares
-app.use(cors());
+  app.use(cors({
+    origin: [
+      'https://alibai-excuse-generator.vercel.app',
+      // add other allowed origins if needed
+    ],
+    credentials: true
+  }));
 app.use(express.json({ limit: '2mb' })); // or '5mb' if you want to be extra safe
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(logger);
