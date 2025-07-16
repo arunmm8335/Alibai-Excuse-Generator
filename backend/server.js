@@ -14,7 +14,7 @@ connectDB();
 // Initialize Middlewares
   app.use(cors({
     origin: [
-      'https://alibai-excuse-generator.vercel.app',
+      'https://alibai-excuse-generator-49h6txazj-roys-projects-55a11432.vercel.app/',
       // add other allowed origins if needed
     ],
     credentials: true
