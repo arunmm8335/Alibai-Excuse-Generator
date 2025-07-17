@@ -105,10 +105,16 @@ const EditProfilePage = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            // Omit empty social fields
+            // Omit all empty or whitespace-only fields
             const dataToSend = { ...form };
-            ['github', 'linkedin', 'twitter'].forEach(key => {
-                if (!dataToSend[key]) delete dataToSend[key];
+            Object.keys(dataToSend).forEach(key => {
+                if (
+                    dataToSend[key] === undefined ||
+                    dataToSend[key] === null ||
+                    (typeof dataToSend[key] === 'string' && dataToSend[key].trim() === '')
+                ) {
+                    delete dataToSend[key];
+                }
             });
             await api.put('/users/profile', dataToSend, { headers: { 'x-auth-token': token } });
             toast.success('Profile updated successfully!');
@@ -121,7 +127,7 @@ const EditProfilePage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-base-200 via-base-100 to-base-300 px-4 py-12 pt-[64px]">
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 pt-[64px]">
             <div className="w-full max-w-3xl bg-base-100/80 backdrop-blur-lg shadow-2xl border border-base-300/40 p-8 md:p-12 flex flex-col md:flex-row gap-10 items-center rounded-2xl animate-fade-in">
                 {/* Avatar and Upload */}
                 <div className="flex flex-col items-center gap-6 w-full md:w-1/3 bg-base-200/80 rounded-2xl p-6">
