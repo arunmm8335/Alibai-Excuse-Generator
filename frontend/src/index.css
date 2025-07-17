@@ -76,6 +76,33 @@
     border: 1px solid var(--s);
 }
 
+/* Force pure black backgrounds for all cards and boxes in blackout theme */
+.theme-blackout .card,
+.theme-blackout .bg-base-100,
+.theme-blackout .bg-base-200,
+.theme-blackout .bg-base-300 {
+    background: oklch(0 0 0) !important;
+}
+
+/* Thin gradient border for Navbar in blackout theme, matching footer */
+.theme-blackout .neon-navbar-border {
+    border-bottom: 0;
+    position: relative;
+}
+
+.theme-blackout .neon-navbar-border::after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--p), var(--s), var(--a));
+    border-radius: 0 0 1rem 1rem;
+    z-index: 10;
+}
+
 /* Animation for Fake Call Screen */
 @keyframes fadeIn {
     from {
@@ -106,4 +133,36 @@
 
 .animate-slide-in-bottom {
     animation: slide-in-bottom 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+
+/* React Modal global styles */
+.modal-overlay {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    position: relative;
+    background: #181c24;
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    max-width: 95vw;
+    min-width: 320px;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 1001;
+    margin: 0 auto;
+    outline: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
