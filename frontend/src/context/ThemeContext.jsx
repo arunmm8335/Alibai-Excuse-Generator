@@ -17,8 +17,7 @@ export const ThemeProvider = ({ children }) => {
   const themes = [
     { name: 'light', label: 'Light', description: 'Clean and bright', icon: Sun },
     { name: 'aiStudio', label: 'AI Studio', description: 'Modern dark theme', icon: Sparkle },
-    { name: 'cyberpunk', label: 'Cyberpunk', description: 'Neon and futuristic', icon: Lightning },
-    { name: 'synthwave', label: 'Synthwave', description: 'Retro and vibrant', icon: Palette },
+    { name: 'blackout', label: 'Blackout', description: 'Pure black theme', icon: Lightning },
   ];
 
   useEffect(() => {
