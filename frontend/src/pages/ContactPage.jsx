@@ -41,7 +41,7 @@ const ContactPage = () => {
                                 alt="Aditya B M"
                                 className="w-40 h-40 rounded-full object-cover shadow-2xl border-4 border-base-300"
                             />
-                            <h2 className="text-3xl font-bold mt-2">Aditya B M</h2>
+                            <h2 className="text-3xl font-bold mt-2">Aditya BM</h2>
                             <p className="text-primary font-semibold mb-2">Co-Creator</p>
                         </div>
                     </div>
