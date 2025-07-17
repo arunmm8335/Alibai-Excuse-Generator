@@ -17,7 +17,7 @@ connectDB();
 app.use(cors({
   origin: [
     'https://alibai-excuse-generator.vercel.app',
-    'https://alibai-excuse-generator-oix48jmsa-roys-projects-55a11432.vercel.app', // <-- add this!
+    'https://alibai-excuse-generator-hejvp5j15-roys-projects-55a11432.vercel.app', // <-- add this!
     'http://localhost:5173',
     'http://localhost:3000'
   ],
