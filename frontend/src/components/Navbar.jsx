@@ -27,47 +27,47 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
   };
 
   return (
-    <div className="navbar fixed top-0 left-0 w-full z-50 bg-base-100 border-b border-base-300/40 shadow-lg min-h-[64px]">
+    <nav className={`navbar fixed top-0 left-0 w-full z-50 bg-base-100/70 backdrop-blur-md border-b border-base-300/40 shadow-xl min-h-[64px] px-4 md:px-10 rounded-b-lg pb-0.5 ${theme === 'blackout' ? 'neon-navbar-border' : ''}`}
+      style={{ WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)' }}>
       <div className="flex-1">
-        <Link to="/" className="btn btn-ghost text-2xl font-bold">
-          <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+        <Link to="/" className="btn btn-ghost text-3xl font-extrabold tracking-tight px-2">
+          <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-lg">
             Alibai
           </span>
         </Link>
       </div>
-      <div className="flex-none items-center">
-        <ul className="menu menu-horizontal px-1">
-          <li><Link to="/about">About</Link></li>
-          <li><Link to="/contact">Contact</Link></li>
-          <li><Link to="/community">Community Wall</Link></li>
+      <div className="flex-none items-center gap-2">
+        <ul className="menu menu-horizontal px-1 gap-1">
+          <li><Link to="/about" className="rounded-xl px-3 py-2 font-medium hover:bg-primary/10 transition-colors">About</Link></li>
+          <li><Link to="/contact" className="rounded-xl px-3 py-2 font-medium hover:bg-primary/10 transition-colors">Contact</Link></li>
+          <li><Link to="/community" className="rounded-xl px-3 py-2 font-medium hover:bg-primary/10 transition-colors">Community Wall</Link></li>
           {user && user.isModerator && (
-            <li><Link to="/moderation">Moderation</Link></li>
+            <li><Link to="/moderation" className="rounded-xl px-3 py-2 font-medium hover:bg-primary/10 transition-colors">Moderation</Link></li>
           )}
           {isLoggedIn ? (
-            <li><Link to="/profile">Profile</Link></li>
+            <li><Link to="/profile" className="rounded-xl px-3 py-2 font-medium hover:bg-primary/10 transition-colors">Profile</Link></li>
           ) : null}
           {!isLoggedIn && (
             <>
-              <li><Link to="/login">Login</Link></li>
-              <li><Link to="/register">Register</Link></li>
+              <li><Link to="/login" className="rounded-xl px-3 py-2 font-medium hover:bg-primary/10 transition-colors">Login</Link></li>
+              <li><Link to="/register" className="rounded-xl px-3 py-2 font-medium hover:bg-primary/10 transition-colors">Register</Link></li>
             </>
           )}
         </ul>
 
         {/* Advanced Theme Selector */}
         <div className="dropdown dropdown-end ml-2">
-          <label tabIndex={0} className="btn btn-ghost btn-circle">
-            <Sparkle size={20} className="fill-current" />
+          <label tabIndex={0} className="btn btn-ghost btn-circle hover:bg-primary/10">
+            <Sparkle size={22} className="fill-current" />
           </label>
-
-          <ul tabIndex={0} className="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-52 z-50">
+          <ul tabIndex={0} className="dropdown-content menu p-2 shadow-xl bg-base-200/90 rounded-2xl w-56 z-50 backdrop-blur-md" style={{ WebkitBackdropFilter: 'blur(8px)', backdropFilter: 'blur(8px)' }}>
             {themes.map((themeOption) => {
               const IconComponent = themeOption.icon || Sparkle;
               return (
                 <li key={themeOption.name}>
                   <button
                     onClick={() => handleThemeChange(themeOption.name)}
-                    className={`flex items-center gap-3 p-3 hover:bg-base-300 transition-colors ${theme === themeOption.name ? 'bg-primary text-primary-content' : ''}`}
+                    className={`flex items-center gap-3 p-3 rounded-xl hover:bg-primary/10 transition-colors ${theme === themeOption.name ? 'bg-primary text-primary-content' : ''}`}
                   >
                     <IconComponent size={18} />
                     <span>{themeOption.label}</span>
@@ -86,12 +86,12 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
         {/* Profile Avatar Dropdown */}
         {isLoggedIn && user && (
           <div className="dropdown dropdown-end ml-2">
-            <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
-              <div className="w-8 h-8 rounded-full ring-2 ring-primary/60 ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center">
+            <label tabIndex={0} className="btn btn-ghost btn-circle avatar hover:bg-primary/10">
+              <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shadow-lg transition-all duration-200">
                 <img src={user.profilePic || DEFAULT_AVATAR} alt="Profile" className="w-full h-full object-cover" />
               </div>
             </label>
-            <ul tabIndex={0} className="dropdown-content menu p-2 shadow-lg bg-base-200 rounded-box w-44 z-50">
+            <ul tabIndex={0} className="dropdown-content menu p-2 shadow-xl bg-base-200/90 rounded-2xl w-48 z-50 backdrop-blur-md" style={{ WebkitBackdropFilter: 'blur(8px)', backdropFilter: 'blur(8px)' }}>
               <li>
                 <Link to="/edit-profile">Edit Profile</Link>
               </li>
@@ -102,7 +102,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
           </div>
         )}
       </div>
-    </div>
+    </nav>
   );
 };
 
