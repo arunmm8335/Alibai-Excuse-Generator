@@ -6,6 +6,7 @@ import axios from 'axios';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute'; // Import the gatekeeper
+import api from './api';
 
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -30,7 +31,7 @@ function App() {
       return;
     }
     try {
-      const res = await axios.get('http://localhost:5000/api/users/profile', { headers: { 'x-auth-token': token } });
+      const res = await api.get('/users/profile', { headers: { 'x-auth-token': token } });
       setUser(res.data.user);
       setIsLoggedIn(true);
     } catch (err) {
