@@ -29,7 +29,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden pt-[64px] px-2 md:px-4 py-2">
+    <div className="fixed inset-0 overflow-hidden pt-[64px] px-2 md:px-4 py-2">
       {/* Background Image with Overlay */}
       {backgroundImage && (
         <div
@@ -54,7 +54,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
       <BackgroundSelector onBackgroundChange={setBackgroundImage} />
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center py-8 px-2 md:px-4">
+      <div className="relative z-10 flex items-center justify-center py-8 px-2 md:px-4">
         <div className="max-w-md w-full space-y-8">
 
           {/* Header */}
@@ -69,7 +69,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
           </div>
 
           {/* Form Card */}
-          <div className="card bg-base-200/20 backdrop-blur-md p-6 md:p-8 shadow-2xl border border-base-300/30 w-full max-w-full">
+          <div className="card bg-base-200/20 backdrop-blur-md p-6 md:p-8 shadow-2xl border border-base-300/30 w-full max-w-full rounded-2xl">
             <form className="space-y-6" onSubmit={onSubmit}>
               <div className="space-y-4">
                 <div className="form-control">
@@ -84,7 +84,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
                       type="email"
                       name="email"
                       placeholder="email@example.com"
-                      className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors pl-10"
+                      className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors pl-10 rounded-xl"
                       required
                       onChange={onChange}
                       aria-label="Email address"
@@ -104,7 +104,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
                       type="password"
                       name="password"
                       placeholder="Password"
-                      className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors pl-10"
+                      className="input input-bordered w-full bg-base-200/50 border-base-300/50 focus:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors pl-10 rounded-xl"
                       required
                       onChange={onChange}
                       aria-label="Password"
@@ -117,7 +117,7 @@ const LoginPage = ({ setIsLoggedIn }) => {
               <div>
                 <button
                   type="submit"
-                  className="btn btn-primary w-full text-lg font-semibold hover:scale-105 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  className="btn btn-primary w-full text-lg font-semibold hover:scale-105 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary rounded-xl"
                   aria-label="Sign In"
                   tabIndex={0}
                 >
