@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import SkeletonCard from './SkeletonCard'; // Import the new component
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
-import { faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
+import { faEnvelope, faSms, faCopy } from '@fortawesome/free-solid-svg-icons';
 import api from '../api';
 
 const HistorySidebar = () => {
@@ -65,8 +65,13 @@ const HistorySidebar = () => {
         window.open(url, '_blank');
     };
 
+    const handleCopy = (excuseText) => {
+        navigator.clipboard.writeText(excuseText);
+        toast.success('Copied to clipboard!');
+    };
+
     return (
-        <div className="bg-base-200 flex flex-col" style={{ height: 'calc(80vh)' }}>
+        <div className="bg-base-200 flex flex-col h-full min-h-0 rounded-2xl shadow-lg" style={{ border: '2px solid #a3a3a3', boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)' }}>
             <h2 className="card-title p-4 border-b border-base-300 text-base-content">History</h2>
 
             {suggestion && (
@@ -90,26 +95,29 @@ const HistorySidebar = () => {
                         {!error && history.length === 0 && <p className="text-base-content/60 p-4">{t('noHistory')}</p>}
                         <ul className="space-y-3">
                             {history.map((item) => (
-                                <li key={item._id} className="group p-3 bg-base-300 rounded-lg flex justify-between items-center transition-all hover:bg-base-content/10">
+                                <li key={item._id} className="group p-4 bg-base-300 rounded-xl flex justify-between items-center transition-all hover:bg-base-content/10 hover:shadow-lg border border-base-200/60">
                                     <div className="flex-grow truncate">
                                         <p className="font-bold truncate text-base-content" title={item.scenario}>
                                             {item.isFavorite && <span className="text-yellow-400 mr-2">⭐</span>}
                                             {item.effectiveness === 1 && <span className="text-green-500 mr-2">👍</span>}
                                             {item.effectiveness === -1 && <span className="text-red-500 mr-2">👎</span>}
-                                            {item.scenario}
+                                            <span className="truncate" title={item.scenario}>{item.scenario}</span>
                                         </p>
                                         <p className="text-sm text-base-content/70 truncate" title={item.excuseText}>
                                             {item.excuseText}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 ml-2">
-                                        <button onClick={() => handleShareWhatsApp(item.excuseText)} className="hover:text-green-500 hover:scale-125 transition-transform" title="Share via WhatsApp">
+                                        <button onClick={() => handleCopy(item.excuseText)} className="hover:text-primary hover:scale-110 transition-transform" title="Copy to clipboard">
+                                            <FontAwesomeIcon icon={faCopy} />
+                                        </button>
+                                        <button onClick={() => handleShareWhatsApp(item.excuseText)} className="hover:text-green-500 hover:scale-110 transition-transform" title="Share via WhatsApp">
                                             <FontAwesomeIcon icon={faWhatsapp} />
                                         </button>
-                                        <button onClick={() => handleShareSMS(item.excuseText)} className="hover:text-blue-400 hover:scale-125 transition-transform" title="Share via SMS">
+                                        <button onClick={() => handleShareSMS(item.excuseText)} className="hover:text-blue-400 hover:scale-110 transition-transform" title="Share via SMS">
                                             <FontAwesomeIcon icon={faSms} />
                                         </button>
-                                        <button onClick={() => handleShareEmail(item.excuseText)} className="hover:text-rose-500 hover:scale-125 transition-transform" title="Share via Email">
+                                        <button onClick={() => handleShareEmail(item.excuseText)} className="hover:text-rose-500 hover:scale-110 transition-transform" title="Share via Email">
                                             <FontAwesomeIcon icon={faEnvelope} />
                                         </button>
                                         <button onClick={() => handleDelete(item._id)} className="btn btn-ghost btn-circle btn-xs opacity-0 group-hover:opacity-100 transition-opacity text-error" title="Delete Excuse">
