@@ -10,11 +10,11 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between py-3 gap-3">
           {/* Left Side: Logo and Copyright */}
           <div className="flex items-center gap-3">
-            <Link to="/" title="Alibai Home">
+            <Link to="/" title="ExcuseMe Home">
               <svg className="w-7 h-7 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M12.001 2.003c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10-4.477-10-10-10zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v4h-2zm0 6h2v2h-2z"></path></svg>
             </Link>
             <p className="text-sm text-base-content/70 font-medium">
-              © 2025 Alibai, Inc
+              © 2025 ExcuseMe, Inc
             </p>
           </div>
           {/* Right Side: Social Media Icons */}

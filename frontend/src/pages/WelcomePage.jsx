@@ -9,7 +9,7 @@ const WelcomePage = () => {
             <Confetti width={window.innerWidth - 2} height={window.innerHeight} numberOfPieces={120} recycle={false} />
             <div className="card bg-base-100 shadow-2xl p-8 md:p-16 text-center max-w-3xl w-full max-w-full animate-fade-in border border-base-300 relative">
                 <h1 className="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-4 md:mb-6 flex items-center justify-center gap-2">
-                    Welcome to Alibai
+                    Welcome to ExcuseMe
                     <span className="animate-bounce text-4xl md:text-5xl">🎉</span>
                 </h1>
                 <p className="text-base md:text-2xl text-neutral/80 mb-6 md:mb-10">

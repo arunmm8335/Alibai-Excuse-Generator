@@ -1,6 +1,6 @@
-# Docker Setup for Alibai
+# Docker Setup for ExcuseMe
 
-This guide will help you set up and run Alibai using Docker containers.
+This guide will help you set up and run ExcuseMe using Docker containers.
 
 ## 🐳 Prerequisites
 

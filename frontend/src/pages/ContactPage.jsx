@@ -33,7 +33,7 @@ const ContactPage = () => {
                                 className="w-40 h-40 rounded-full object-cover shadow-2xl border-4 border-base-300"
                             />
                             <h2 className="text-3xl font-bold mt-2">Arun M</h2>
-                            <p className="text-primary font-semibold mb-2">The Developer of Alibai</p>
+                            <p className="text-primary font-semibold mb-2">The Developer of ExcuseMe</p>
                         </div>
                         <div className="flex flex-col items-center">
                             <img
@@ -46,7 +46,7 @@ const ContactPage = () => {
                         </div>
                     </div>
                     <p className="text-base-content/80 mb-6">
-                        A passionate full-stack developer with a love for creating intelligent, user-friendly applications. Alibai was built as a major project to showcase modern AI integration, robust backend architecture, and a polished frontend user experience.
+                        A passionate full-stack developer with a love for creating intelligent, user-friendly applications. ExcuseMe was built as a major project to showcase modern AI integration, robust backend architecture, and a polished frontend user experience.
                     </p>
                     <div className="flex gap-5 mb-8">
                         <SocialIcon href="https://github.com/your-username" title="GitHub"><GithubLogo size={28} /></SocialIcon>

@@ -434,7 +434,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         if (!chatCardRef.current) return;
         const canvas = await html2canvas(chatCardRef.current, { backgroundColor: null });
         const link = document.createElement('a');
-        link.download = 'alibai-chat-screenshot.png';
+        link.download = 'excuseme-chat-screenshot.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
     };
@@ -468,7 +468,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
             {/* Chat Card (center) */}
             <div className="h-full w-full flex flex-col min-h-0">
                 <div ref={chatCardRef} className="card bg-base-100 rounded-2xl flex flex-col relative h-full min-h-0 w-full p-4" style={{ border: '2px solid #a3a3a3', boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)' }}>
-                    <h2 className="card-title p-4 border-b border-base-300 text-base-content gradient-text">Alibai Chat</h2>
+                    <h2 className="card-title p-4 border-b border-base-300 text-base-content gradient-text">ExcuseMe Chat</h2>
                     {/* Only chat messages scroll */}
                     <div ref={chatContainerRef} className="flex-1 min-h-0 p-6 overflow-y-auto overflow-x-hidden w-full max-w-full">
                         {messages.map((msg, index) => (

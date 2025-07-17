@@ -32,7 +32,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
       <div className="flex-1">
         <Link to="/" className="btn btn-ghost text-3xl font-extrabold tracking-tight px-2">
           <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-lg">
-            Alibai
+            ExcuseMe
           </span>
         </Link>
       </div>

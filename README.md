@@ -1,4 +1,4 @@
-# Alibai: Intelligent Excuse Generator
+# ExcuseMe: Intelligent Excuse Generator
 
 > **A full-stack, AI-powered web application for generating high-quality, believable excuses, featuring real-time streaming, community engagement, moderation tools, and Twilio integration.**
 
@@ -70,8 +70,8 @@
 
 ### Docker (Recommended)
 ```bash
-git clone https://github.com/arunmm8335/Alibai-Excuse-Generator.git
-cd Alibai-Excuse-Generator
+git clone https://github.com/arunmm8335/ExcuseMe-Excuse-Generator.git
+cd ExcuseMe-Excuse-Generator
 docker compose up --build
 ```
 - Frontend: http://localhost
@@ -79,11 +79,11 @@ docker compose up --build
 
 ### Local Development
 ```bash
-git clone https://github.com/arunmm8335/Alibai-Excuse-Generator.git
-cd Alibai-Excuse-Generator
+git clone https://github.com/arunmm8335/ExcuseMe-Excuse-Generator.git
+cd ExcuseMe-Excuse-Generator
 
 # Backend
-dcd backend
+cd backend
 npm install
 npm start
 
@@ -99,7 +99,7 @@ npm run dev
 
 ### Backend `.env` Example
 ```env
-MONGO_URI=mongodb://localhost:27017/alibai
+MONGO_URI=mongodb://localhost:27017/excuseme
 JWT_SECRET=your-super-secret-jwt-key
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_API_BASE_URL=https://api.openai.com/v1
@@ -233,8 +233,8 @@ This project is licensed under the [MIT License](LICENSE.md).
 ---
 
 ## Support
-- [GitHub Issues](https://github.com/arunmm8335/Alibai-Excuse-Generator/issues)
-- [GitHub Discussions](https://github.com/arunmm8335/Alibai-Excuse-Generator/discussions)
+- [GitHub Issues](https://github.com/arunmm8335/ExcuseMe-Excuse-Generator/issues)
+- [GitHub Discussions](https://github.com/arunmm8335/ExcuseMe-Excuse-Generator/discussions)
 - Contact via GitHub profile
 
 ---
@@ -245,4 +245,4 @@ This project is licensed under the [MIT License](LICENSE.md).
 
 ---
 
-*Made with ❤️ by the Alibai Team*
+*Made with ❤️ by the ExcuseMe Team*

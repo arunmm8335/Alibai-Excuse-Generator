@@ -66,7 +66,7 @@ const RegisterPage = ({ setIsLoggedIn }) => {
           <div className="text-center flex flex-col items-center justify-center mb-2">
             <FaUserPlus className="mx-auto mb-2 text-primary drop-shadow-lg" size={56} aria-label="Register Icon" />
             <h2 className="text-5xl font-extrabold mb-2 text-primary drop-shadow-lg" style={{ letterSpacing: '0.02em', textShadow: '0 2px 8px rgba(0,0,0,0.25)', color: 'var(--tw-prose-invert, #2563eb)' }}>
-              Join Alibai
+              Join ExcuseMe
             </h2>
             <p className="text-lg text-base-content/80 mb-2">
               Start generating intelligent excuses in seconds.
