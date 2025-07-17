@@ -8,6 +8,7 @@ import { faWandMagicSparkles, faFileShield, faPhone, faMicrophone, faPaperPlane,
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import html2canvas from 'html2canvas';
 import imageCompression from 'browser-image-compression';
+import api, { baseURL } from '../api';
 // import ExcuseChoices from './ExcuseChoices';
 
 
@@ -116,7 +117,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         }
 
         setIsLoading(true);
-        const promise = axios.post('http://localhost:5000/api/excuses/apology',
+        const promise = api.post('/excuses/apology',
             { scenario, excuseText, language: runSettings.language },
             { headers: { 'x-auth-token': localStorage.getItem('token') } }
         );
@@ -195,7 +196,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         }
         const avatarToSend = senderAvatarFile || senderAvatar;
         const receiverAvatarToSend = receiverAvatarFile || receiverAvatar;
-        const promise = axios.post('http://localhost:5000/api/excuses/proof',
+        const promise = api.post('/excuses/proof',
             { scenario, excuseText, language: runSettings.language, platform, senderName, receiverName, senderAvatar: avatarToSend, receiverAvatar: receiverAvatarToSend },
             { headers: { 'x-auth-token': localStorage.getItem('token') } }
         );
@@ -230,7 +231,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         if (!userPhoneNumber) return;
 
         setIsLoading(true);
-        const promise = axios.post('http://localhost:5000/api/calls/trigger',
+        const promise = api.post('/calls/trigger',
             { userPhoneNumber, excuseText },
             { headers: { 'x-auth-token': localStorage.getItem('token') } }
         );
@@ -241,8 +242,8 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
             error: (err) => err.response?.data?.msg || "Failed to initiate call."
         }).finally(() => setIsLoading(false));
     };
-    const handleFavorite = (excuseId) => { const promise = axios.patch(`http://localhost:5000/api/excuses/${excuseId}/favorite`, null, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Updating...', success: (res) => { updateMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return res.data.isFavorite ? 'Added to favorites!' : 'Removed from favorites.'; }, error: 'Could not update favorite status.', }); };
-    const handleRateExcuse = (excuseId, rating) => { const promise = axios.patch(`http://localhost:5000/api/excuses/${excuseId}/rate`, { rating }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving rating...', success: (res) => { updateMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return 'Rating saved! The AI will learn from this.'; }, error: 'Failed to submit rating.', }); };
+    const handleFavorite = (excuseId) => { const promise = api.patch(`/excuses/${excuseId}/favorite`, null, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Updating...', success: (res) => { updateMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return res.data.isFavorite ? 'Added to favorites!' : 'Removed from favorites.'; }, error: 'Could not update favorite status.', }); };
+    const handleRateExcuse = (excuseId, rating) => { const promise = api.patch(`/excuses/${excuseId}/rate`, { rating }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving rating...', success: (res) => { updateMessages(prev => prev.map(msg => msg._id === excuseId ? { ...msg, ...res.data } : msg)); return 'Rating saved! The AI will learn from this.'; }, error: 'Failed to submit rating.', }); };
 
     // Centralized function to call the generation API
 
@@ -306,7 +307,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/excuses/generate-stream', {
+            const response = await fetch(`${baseURL}/excuses/generate-stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                 body: JSON.stringify({ scenario: scenarioToSave, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language, tone: runSettings.tone })
@@ -348,7 +349,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
                 return;
             }
 
-            const savePromise = axios.post('http://localhost:5000/api/excuses/save', {
+            const savePromise = api.post('/excuses/save', {
                 scenario: scenarioToSave,
                 excuseText: finalResponseText.trim(),
                 context: runSettings.context
@@ -379,7 +380,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
     const generateExcuseChoices = async (scenarioText) => {
         setIsLoading(true); setExcuseChoices([]);
         try {
-            const res = await axios.post('http://localhost:5000/api/excuses/generate', { scenario: scenarioText, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language, tone: runSettings.tone }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
+            const res = await api.post('/excuses/generate', { scenario: scenarioText, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language, tone: runSettings.tone }, { headers: { 'x-auth-token': localStorage.getItem('token') } });
             if (res.data.choices && res.data.choices.length > 0) {
                 setExcuseChoices(res.data.choices);
             } else { throw new Error("AI did not return any choices."); }
@@ -390,7 +391,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
 
 
 
-    const handleSelectExcuse = (excuseText) => { setIsLoading(true); setExcuseChoices([]); const promise = axios.post('http://localhost:5000/api/excuses/save', { scenario: currentScenario, excuseText, context: runSettings.context }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving your choice...', success: (res) => { const savedExcuseMessage = { sender: 'ai', ...res.data }; addMessageToChat(savedExcuseMessage); if (typeof setLastExcuse === 'function') setLastExcuse(savedExcuseMessage); return 'Excuse saved!'; }, error: 'Could not save excuse.' }).finally(() => setIsLoading(false)); };
+    const handleSelectExcuse = (excuseText) => { setIsLoading(true); setExcuseChoices([]); const promise = api.post('/excuses/save', { scenario: currentScenario, excuseText, context: runSettings.context }, { headers: { 'x-auth-token': localStorage.getItem('token') } }); toast.promise(promise, { loading: 'Saving your choice...', success: (res) => { const savedExcuseMessage = { sender: 'ai', ...res.data }; addMessageToChat(savedExcuseMessage); if (typeof setLastExcuse === 'function') setLastExcuse(savedExcuseMessage); return 'Excuse saved!'; }, error: 'Could not save excuse.' }).finally(() => setIsLoading(false)); };
     const handleVoiceInput = () => { if (!recognition) { return toast.error("Voice recognition is not supported in your browser."); } if (isListening) { recognition.stop(); return; } recognition.start(); recognition.onstart = () => setIsListening(true); recognition.onend = () => setIsListening(false); recognition.onerror = () => { toast.error("Voice recognition failed. Please try again."); setIsListening(false); }; recognition.onresult = (event) => { setInput(event.results[0][0].transcript); }; };
 
     // --- NEW: Simplified Edit Handler ---
