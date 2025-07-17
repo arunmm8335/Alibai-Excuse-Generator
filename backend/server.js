@@ -14,17 +14,19 @@ connectDB();
 // Initialize Middlewares
  // const cors = require('cors');
 
-app.use(cors({
-  origin: [
-    'https://alibai-excuse-generator.vercel.app',
-    'https://alibai-excuse-generator-hejvp5j15-roys-projects-55a11432.vercel.app', // <-- add this!
+  const allowedOrigins = [
+    process.env.FRONTEND_URI,
+    process.env.FRONTEND_URI_2,
     'http://localhost:5173',
     'http://localhost:3000'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
-}));
+  ].filter(Boolean);
+
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+  }));
 app.use(express.json({ limit: '2mb' })); // or '5mb' if you want to be extra safe
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(logger);
