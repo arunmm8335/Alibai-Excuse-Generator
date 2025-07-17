@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { FaFire, FaRegCommentAlt, FaClock, FaUser, FaFlag, FaShare, FaChevronDown, FaChevronUp, FaTrash, FaThumbsUp, FaThumbsDown, FaEye } from 'react-icons/fa';
+import { FaFire, FaRegCommentAlt, FaClock, FaUser, FaFlag, FaShare, FaChevronDown, FaChevronUp, FaTrash, FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import api from '../api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faThumbsUp, faThumbsDown, faCommentDots, faShareNodes, faCopy, faEnvelope, faSms, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 const scenarioOptions = [
     '', 'work', 'school', 'social', 'family'
@@ -44,7 +47,7 @@ const CommunityWallPage = () => {
     const [addCommentLoading, setAddCommentLoading] = useState({});
     const [deleteCommentLoading, setDeleteCommentLoading] = useState({});
     const [search, setSearch] = useState('');
-    const [scenario, setScenario] = useState('');
+    const [context, setContext] = useState('');
     const [author, setAuthor] = useState('');
     const [minLikes, setMinLikes] = useState('');
     const [trending, setTrending] = useState([]);
@@ -160,10 +163,8 @@ const CommunityWallPage = () => {
             const params = new URLSearchParams({
                 page: pageNum,
                 limit: 20,
-                ...(search && { search }),
-                ...(scenario && { scenario }),
-                ...(author && { author }),
-                ...(minLikes && { minLikes })
+                ...(filters.author && { author: filters.author }),
+                ...(filters.context ? { context: filters.context } : {})
             });
             const res = await api.get(`/excuses/public?${params.toString()}`);
             setExcuses(res.data.excuses);
@@ -248,6 +249,13 @@ const CommunityWallPage = () => {
         fetchExcuses(1);
     };
 
+    // Live filter effect for author and scenario
+    useEffect(() => {
+        setPage(1);
+        fetchExcuses(1, { author, context });
+        // eslint-disable-next-line
+    }, [author, context]);
+
     return (
         <div className="min-h-screen bg-base-100 flex flex-col items-center p-8 pt-[64px]">
             <h1 className="text-3xl font-bold mb-8 text-primary">Community Excuse Wall</h1>
@@ -262,7 +270,7 @@ const CommunityWallPage = () => {
                 ) : (
                     <div className="flex gap-4 overflow-x-auto pb-2">
                         {trending.map(excuse => (
-                            <div key={excuse._id} className={`min-w-[260px] bg-gradient-to-br from-base-200 via-base-100 to-base-300 rounded-xl p-4 border border-base-300 shadow flex-shrink-0 hover:shadow-lg transition-shadow duration-200 animate-fade-in`}>
+                            <div key={excuse._id} className={`min-w-[260px] bg-gradient-to-br from-base-200 via-base-100 to-base-300 rounded-3xl p-4 flex-shrink-0 hover:shadow-lg transition-shadow duration-200 animate-fade-in`} style={{ border: '2px solid #a3a3a3', boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)' }}>
                                 <div className="flex items-center gap-2 mb-1">
                                     <img src={getAvatar(excuse.user, excuse.publicAuthor)} alt="avatar" className="w-8 h-8 rounded-full border border-primary/30" />
                                     <span className="font-semibold text-base-content text-xs">{excuse.publicAuthor || excuse.user?.name || 'Anonymous'}</span>
@@ -291,7 +299,7 @@ const CommunityWallPage = () => {
                                             color: excuse.userLike ? '#2563eb' : '#888'
                                         }}
                                     >
-                                        <FaThumbsUp size={18} />
+                                        <FontAwesomeIcon icon={faThumbsUp} size={18} />
                                         <span>{excuse.likes || 0}</span>
                                     </button>
                                     <button
@@ -308,15 +316,15 @@ const CommunityWallPage = () => {
                                             color: excuse.userDislike ? '#dc2626' : '#888'
                                         }}
                                     >
-                                        <FaThumbsDown size={18} />
+                                        <FontAwesomeIcon icon={faThumbsDown} size={18} />
                                         <span>{excuse.dislikes || 0}</span>
                                     </button>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        <FaRegCommentAlt color="#888" size={18} />
+                                        <FontAwesomeIcon icon={faCommentDots} color="#888" size={18} />
                                         {excuse.comments?.length || 0}
                                     </span>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        <FaEye color="#888" size={16} />
+                                        <FontAwesomeIcon icon={faEye} color="#888" size={16} />
                                         {excuse.views || 0}
                                     </span>
                                 </div>
@@ -326,17 +334,10 @@ const CommunityWallPage = () => {
                 )}
             </div>
             <div className="w-full max-w-3xl mb-8 flex flex-wrap gap-4 items-end">
-                <input
-                    className="input input-sm flex-1"
-                    type="text"
-                    placeholder="Search excuses or scenarios..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
                 <select
                     className="select select-sm"
-                    value={scenario}
-                    onChange={e => setScenario(e.target.value)}
+                    value={context}
+                    onChange={e => setContext(e.target.value)}
                 >
                     <option value="">All Scenarios</option>
                     {scenarioOptions.filter(opt => opt).map(opt => (
@@ -350,15 +351,6 @@ const CommunityWallPage = () => {
                     value={author}
                     onChange={e => setAuthor(e.target.value)}
                 />
-                <input
-                    className="input input-sm w-24"
-                    type="number"
-                    min="0"
-                    placeholder="Min Likes"
-                    value={minLikes}
-                    onChange={e => setMinLikes(e.target.value)}
-                />
-                <button className="btn btn-sm btn-primary" onClick={handleApplyFilters}>Apply</button>
             </div>
             {loading ? (
                 <div className="text-center mt-20"><span className="loading loading-spinner loading-lg"></span></div>
@@ -367,7 +359,7 @@ const CommunityWallPage = () => {
             ) : (
                 <div className="w-full max-w-3xl space-y-6">
                     {excuses.map(excuse => (
-                        <div key={excuse._id} className={`bg-gradient-to-br from-base-200 via-base-100 to-base-300 rounded-2xl p-6 shadow border border-base-300 flex flex-col gap-2 hover:shadow-xl transition-shadow duration-200 animate-slide-in`}>
+                        <div key={excuse._id} className={`bg-gradient-to-br from-base-200 via-base-100 to-base-300 rounded-3xl p-6 shadow flex flex-col gap-2 hover:shadow-xl transition-shadow duration-200 animate-slide-in`} style={{ border: '2px solid #a3a3a3', boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)' }}>
                             <div className="flex items-center gap-3 mb-2 flex-wrap">
                                 <img src={getAvatar(excuse.user, excuse.publicAuthor)} alt="avatar" className="w-10 h-10 rounded-full border border-primary/30" />
                                 <span className="font-semibold text-base-content">{excuse.publicAuthor || excuse.user?.name || 'Anonymous'}</span>
@@ -402,7 +394,7 @@ const CommunityWallPage = () => {
                                         color: excuse.userLike ? '#2563eb' : '#888'
                                     }}
                                 >
-                                    <FaThumbsUp size={20} />
+                                    <FontAwesomeIcon icon={faThumbsUp} size="lg" />
                                     <span>{excuse.likes || 0}</span>
                                 </button>
                                 <button
@@ -419,7 +411,7 @@ const CommunityWallPage = () => {
                                         color: excuse.userDislike ? '#dc2626' : '#888'
                                     }}
                                 >
-                                    <FaThumbsDown size={20} />
+                                    <FontAwesomeIcon icon={faThumbsDown} size="lg" />
                                     <span>{excuse.dislikes || 0}</span>
                                 </button>
                                 <button
@@ -427,7 +419,7 @@ const CommunityWallPage = () => {
                                     aria-label="Comments"
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
                                 >
-                                    <FaRegCommentAlt color="#888" size={18} />
+                                    <FontAwesomeIcon icon={faCommentDots} color="#888" size="lg" />
                                     <span>{comments[excuse._id]?.length || excuse.comments?.length || 0}</span>
                                 </button>
                                 <button
@@ -435,10 +427,10 @@ const CommunityWallPage = () => {
                                     aria-label="Share"
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
                                 >
-                                    <FaShare color="#888" size={18} />
+                                    <FontAwesomeIcon icon={faShareNodes} color="#888" size="lg" />
                                 </button>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <FaEye color="#888" size={16} />
+                                    <FontAwesomeIcon icon={faEye} color="#888" size={16} />
                                     {excuse.views || 0}
                                 </span>
                             </div>
@@ -535,31 +527,21 @@ const CommunityWallPage = () => {
                                                         type="text"
                                                         placeholder="Add a comment..."
                                                         value={commentInput[excuse._id] || ''}
-                                                        onChange={e => {
-                                                            setCommentInput(prev => ({ ...prev, [excuse._id]: e.target.value }));
-                                                            if (e.target.value.length < 2 || e.target.value.length > 300) {
-                                                                setCommentError(prev => ({ ...prev, [excuse._id]: 'Comment must be between 2 and 300 characters.' }));
-                                                            } else {
-                                                                setCommentError(prev => ({ ...prev, [excuse._id]: '' }));
-                                                            }
-                                                        }}
-                                                        onKeyDown={e => { if (e.key === 'Enter') handleAddComment(excuse._id); }}
+                                                        onChange={e => setCommentInput(prev => ({ ...prev, [excuse._id]: e.target.value }))}
+                                                        maxLength={300}
                                                         disabled={addCommentLoading[excuse._id]}
-                                                        ref={el => {
-                                                            if (commentsOpen[excuse._id] && el) el.focus();
-                                                        }}
                                                     />
-                                                    {commentError[excuse._id] && <div className="text-error text-xs mt-1">{commentError[excuse._id]}</div>}
                                                     <button
-                                                        className="btn btn-sm btn-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                                        className="btn btn-sm btn-primary"
                                                         onClick={() => handleAddComment(excuse._id)}
-                                                        disabled={addCommentLoading[excuse._id] || !(commentInput[excuse._id] || '').trim()}
-                                                        aria-label="Post comment"
-                                                        tabIndex={0}
+                                                        disabled={addCommentLoading[excuse._id]}
                                                     >
-                                                        {addCommentLoading[excuse._id] ? <span className="loading loading-spinner loading-xs"></span> : 'Post'}
+                                                        Post
                                                     </button>
                                                 </div>
+                                                {commentError[excuse._id] && (
+                                                    <div className="text-error text-xs mt-1">{commentError[excuse._id]}</div>
+                                                )}
                                             </>
                                         )}
                                     </div>
@@ -569,14 +551,8 @@ const CommunityWallPage = () => {
                     ))}
                 </div>
             )}
-            {/* Pagination */}
-            <div className="flex gap-2 mt-8">
-                <button className="btn btn-sm" disabled={page === 1} onClick={() => setPage(page - 1)}>Prev</button>
-                <span className="text-base-content/70 text-sm">Page {page} of {totalPages}</span>
-                <button className="btn btn-sm" disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next</button>
-            </div>
         </div>
     );
 };
 
-export default CommunityWallPage; 
+export default CommunityWallPage;
