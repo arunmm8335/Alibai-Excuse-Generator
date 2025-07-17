@@ -85,10 +85,65 @@ router.put('/profile', auth, validateProfileUpdate, handleValidationErrors, asyn
             { new: true, runValidators: true }
         ).select('-password');
 
+        // If the name was updated, update all public excuses' publicAuthor
+        if (name) {
+            const updateResult = await Excuse.updateMany(
+                { user: req.user.id, isPublic: true },
+                { $set: { publicAuthor: name } }
+            );
+            console.log(`Updated publicAuthor for user ${req.user.id}:`, updateResult.modifiedCount, 'excuses updated.');
+        }
+
         res.json({ user: updatedUser, msg: 'Profile updated successfully!' });
     } catch (err) {
         console.error('Profile update error:', err);
         res.status(500).send('Server Error');
+    }
+});
+
+// Predictive usage pattern endpoint
+router.get('/profile/patterns', auth, async (req, res) => {
+    try {
+        const excuses = await Excuse.find({ user: req.user.id });
+        if (!excuses.length) return res.json({ patterns: null });
+
+        // Analyze hour of day
+        const hourCounts = Array(24).fill(0);
+        // Analyze day of week (0=Sunday)
+        const dayCounts = Array(7).fill(0);
+        // Analyze context
+        const contextCounts = {};
+        for (const e of excuses) {
+            const d = new Date(e.createdAt);
+            hourCounts[d.getHours()]++;
+            dayCounts[d.getDay()]++;
+            contextCounts[e.context] = (contextCounts[e.context] || 0) + 1;
+        }
+        // Find most common hour, day, context
+        const mostCommonHour = hourCounts.indexOf(Math.max(...hourCounts));
+        const mostCommonDay = dayCounts.indexOf(Math.max(...dayCounts));
+        const mostCommonContext = Object.entries(contextCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+        res.json({
+            patterns: {
+                hour: mostCommonHour,
+                day: mostCommonDay,
+                context: mostCommonContext
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ msg: 'Error analyzing usage patterns.' });
+    }
+});
+
+// Most effective excuses endpoint
+router.get('/profile/effective', auth, async (req, res) => {
+    try {
+        const effective = await Excuse.find({ user: req.user.id, effectiveness: 1 })
+            .sort({ createdAt: -1 })
+            .limit(5);
+        res.json({ effective });
+    } catch (err) {
+        res.status(500).json({ msg: 'Error fetching effective excuses.' });
     }
 });
 
