@@ -1,6 +1,7 @@
 import React from 'react';
 import { EnvelopeSimple, Phone, GithubLogo, LinkedinLogo, TwitterLogo } from 'phosphor-react';
 import myProfilePic from '../assets/profile-arun.jpg';
+import adityaProfilePic from '../assets/profile-aditya.jpg';
 
 // A helper component for the contact links
 const ContactLink = ({ icon, href, children }) => (
@@ -24,17 +25,30 @@ const ContactPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
                 {/* --- LEFT SIDE: Meet the Creator --- */}
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                    <img
-                        src={myProfilePic}
-                        alt="Arun M"
-                        className="w-40 h-40 rounded-full object-cover shadow-2xl mb-6 border-4 border-base-300"
-                    />
-                    <h2 className="text-3xl font-bold">Arun M</h2>
-                    <p className="text-primary font-semibold mb-4">The Developer of Alibai</p>
+                    <div className="flex flex-row gap-8 items-center mb-6">
+                        <div className="flex flex-col items-center">
+                            <img
+                                src={myProfilePic}
+                                alt="Arun M"
+                                className="w-40 h-40 rounded-full object-cover shadow-2xl border-4 border-base-300"
+                            />
+                            <h2 className="text-3xl font-bold mt-2">Arun M</h2>
+                            <p className="text-primary font-semibold mb-2">The Developer of Alibai</p>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <img
+                                src={adityaProfilePic}
+                                alt="Aditya B M"
+                                className="w-40 h-40 rounded-full object-cover shadow-2xl border-4 border-base-300"
+                            />
+                            <h2 className="text-3xl font-bold mt-2">Aditya B M</h2>
+                            <p className="text-primary font-semibold mb-2">Co-Creator</p>
+                        </div>
+                    </div>
                     <p className="text-base-content/80 mb-6">
                         A passionate full-stack developer with a love for creating intelligent, user-friendly applications. Alibai was built as a major project to showcase modern AI integration, robust backend architecture, and a polished frontend user experience.
                     </p>
-                    <div className="flex gap-5">
+                    <div className="flex gap-5 mb-8">
                         <SocialIcon href="https://github.com/your-username" title="GitHub"><GithubLogo size={28} /></SocialIcon>
                         <SocialIcon href="https://linkedin.com/in/your-profile" title="LinkedIn"><LinkedinLogo size={28} /></SocialIcon>
                         <SocialIcon href="https://twitter.com/your-handle" title="Twitter"><TwitterLogo size={28} /></SocialIcon>
