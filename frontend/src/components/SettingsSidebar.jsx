@@ -15,9 +15,9 @@ const SettingsSidebar = ({ settings, onSettingsChange }) => {
   };
 
   return (
-    <div className="card bg-base-200 shadow-xl" style={{ height: 'auto', minHeight: '320px', maxWidth: '100%', paddingBottom: 0 }}>
-      <h2 className="card-title p-3 border-b border-base-300 text-base text-primary">Run Settings</h2>
-      <div className="p-3 space-y-2">
+    <div className="card bg-gradient-to-br from-base-200 via-base-300 to-base-100 shadow-2xl rounded-3xl p-4" style={{ border: '2px solid #a3a3a3', boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)', height: 'auto', minHeight: '340px', maxWidth: '100%', paddingBottom: 0 }}>
+      <h2 className="card-title p-4 border-b-2 border-primary/30 text-lg font-bold text-primary tracking-wide mb-2">Run Settings</h2>
+      <div className="p-2 space-y-2">
         <div>
           <label className="label py-1">
             <span className="label-text text-neutral/70 text-xs">Context</span>
