@@ -62,7 +62,7 @@ const ContactPage = () => {
                             arunmyageri1916@gmail.com
                         </ContactLink>
                         <ContactLink href="tel:+918062181856" icon={<Phone size={24} weight="duotone" />}>
-                            +91 80621 81856
+                            +91 8792191633
                         </ContactLink>
                         <div className="divider my-4"></div>
                         <div className="flex items-start gap-3">
