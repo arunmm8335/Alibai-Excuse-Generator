@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ProofDisplay from './ProofDisplay';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWandMagicSparkles, faFileShield, faPhone, faMicrophone, faPaperPlane, faCommentDots, faBolt, faGlobe, faCog, faStar, faVolumeUp, faThumbsUp, faThumbsDown, faDownload, faShareNodes, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
+import { faWandMagicSparkles, faFileShield, faPhone, faMicrophone, faPaperPlane, faCommentDots, faBolt, faGlobe, faCog, faStar, faVolumeUp, faThumbsUp, faThumbsDown, faDownload, faShareNodes, faEnvelope, faSms, faInfoCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import html2canvas from 'html2canvas';
 import imageCompression from 'browser-image-compression';
 import api, { baseURL } from '../api';
+import Modal from 'react-modal';
 // import ExcuseChoices from './ExcuseChoices';
 
 
@@ -147,6 +148,7 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
     // Add state for uploaded avatar images (data URLs)
     const [senderAvatarFile, setSenderAvatarFile] = useState('');
     const [receiverAvatarFile, setReceiverAvatarFile] = useState('');
+    const [proofModalOpen, setProofModalOpen] = useState(false);
 
     // Helper to handle file upload, compress, and convert to data URL
     const handleAvatarFile = async (e, setAvatarFile, setAvatarUrl) => {
@@ -264,6 +266,20 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         return intersection.size / Math.max(aWords.size, bWords.size);
     }
 
+    const [effectiveExcuses, setEffectiveExcuses] = useState([]);
+    useEffect(() => {
+        // Fetch user's most effective excuses
+        const fetchEffective = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const res = await api.get('/users/profile/effective', { headers: { 'x-auth-token': token } });
+                setEffectiveExcuses(res.data.effective || []);
+            } catch { }
+        };
+        fetchEffective();
+    }, []);
+
     // --- NEW: Streaming Send Handler ---
     const handleSend = async () => {
         const token = localStorage.getItem('token');
@@ -306,11 +322,16 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         setInput('');
         setIsLoading(true);
 
+        // --- AI prompt with effectiveness influence ---
+        let examplesPrompt = '';
+        if (effectiveExcuses.length > 0) {
+            examplesPrompt = '\n\nLEARNING: The user has previously had success with excuses like these. Generate a new excuse in a similar style:\n' + effectiveExcuses.map(e => `- "${e.excuseText}"`).join('\n');
+        }
         try {
             const response = await fetch(`${baseURL}/excuses/generate-stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                body: JSON.stringify({ scenario: scenarioToSave, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language, tone: runSettings.tone })
+                body: JSON.stringify({ scenario: input, context: runSettings.context, urgency: runSettings.urgency, language: runSettings.language, tone: runSettings.tone, examplesPrompt })
             });
 
             if (!response.body) throw new Error("Response body is empty.");
@@ -432,127 +453,277 @@ const ChatInterface = ({ settings, fetchHistory, lastExcuse, setLastExcuse, mess
         window.open(url, '_blank');
     };
 
+    // Replace the copy button handler with a function that shows a toast
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        toast.success('Copied to clipboard!');
+    };
+
+    const [showTooltip, setShowTooltip] = useState(false);
+
     return (
-        <div className="relative h-[90vh] w-full max-w-full px-2 md:px-6">
-            <div ref={chatCardRef} className="card bg-base-100/80 backdrop-blur-sm shadow-xl flex flex-col relative border border-base-300 h-full">
-                <h2 className="card-title p-4 border-b border-base-300 text-base-content gradient-text">Alibai Chat</h2>
-                <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
-                    {messages.map((msg, index) => (
-                        <div key={index} className={`chat ${msg.sender === 'user' ? 'chat-end' : 'chat-start'} animate-slide-in-bottom mb-4`}>
-                            {msg.type === 'proof' ? (<ProofDisplay proofText={msg.text} platform={msg.platform} senderName={msg.senderName} receiverName={msg.receiverName} senderAvatar={msg.senderAvatar} receiverAvatar={msg.receiverAvatar} />) : (
-                                <div className={`chat-bubble max-w-md group relative backdrop-blur-sm px-5 py-3
-                                    whitespace-pre-line break-words
-                                    ${msg.sender === 'user'
-                                        ? 'chat-bubble-primary shadow-lg rounded-2xl'
-                                        : 'bg-base-300/80 border border-base-300 shadow rounded-2xl'
-                                    }`}>
-                                    {msg.sender === 'user' ? msg.text : (msg.text || msg.excuseText)}
-                                    {msg.sender === 'user' && !isLoading && (
-                                        <button onClick={() => handleEditClick(msg)} className="btn btn-ghost btn-circle btn-xs absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
-                                        </button>
+        <div className="relative h-full w-full max-w-full px-2 md:px-6 flex flex-col justify-between items-stretch min-h-0">
+            {/* History Sidebar (left) */}
+            {/* Run Settings Sidebar (right) */}
+            {/* Chat Card (center) */}
+            <div className="h-full w-full flex flex-col min-h-0">
+                <div ref={chatCardRef} className="card bg-base-100 rounded-2xl flex flex-col relative h-full min-h-0 w-full p-4" style={{ border: '2px solid #a3a3a3', boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)' }}>
+                    <h2 className="card-title p-4 border-b border-base-300 text-base-content gradient-text">Alibai Chat</h2>
+                    {/* Only chat messages scroll */}
+                    <div ref={chatContainerRef} className="flex-1 min-h-0 p-6 overflow-y-auto overflow-x-hidden w-full max-w-full">
+                        {messages.map((msg, index) => (
+                            <div key={index} className={`chat ${msg.sender === 'user' ? 'chat-end' : 'chat-start'} mb-4`}>
+                                {msg.type === 'proof' ? (
+                                    <ProofDisplay proofText={msg.text} platform={msg.platform} senderName={msg.senderName} receiverName={msg.receiverName} senderAvatar={msg.senderAvatar} receiverAvatar={msg.receiverAvatar} />
+                                ) : (
+                                    <div className={`chat-bubble max-w-md group relative px-6 py-4 whitespace-pre-line break-words transition-all duration-200
+                                        ${msg.sender === 'user'
+                                            ? 'bg-gray-900 text-white shadow-xl rounded-3xl text-lg font-semibold hover:bg-gray-800 hover:shadow-2xl ml-auto'
+                                            : 'bg-black text-white shadow-2xl rounded-3xl text-lg font-bold border-0 hover:bg-gray-900 hover:shadow-2xl mr-auto'
+                                        }`}>
+                                        {msg.sender === 'user' ? msg.text : (msg.text || msg.excuseText)}
+                                        {msg.sender === 'user' && !isLoading && (
+                                            <button onClick={() => handleEditClick(msg)} className="btn btn-ghost btn-circle btn-xs absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+                                            </button>
+                                        )}
+                                        {msg.sender === 'ai' && msg._id && !msg.text?.startsWith("Sorry") && (
+                                            (() => {
+                                                const isApology = ((msg.text && msg.text.toLowerCase().includes('apology')) || (msg.excuseText && msg.excuseText.toLowerCase().includes('apology')));
+                                                return (
+                                                    <div className="flex gap-3 mt-2 items-center">
+                                                        {/* Copy Button for both excuses and apologies */}
+                                                        <button onClick={() => handleCopy(msg.text || msg.excuseText)} className="hover:text-primary hover:scale-110 transition-transform" title="Copy to clipboard">
+                                                            <FontAwesomeIcon icon={faCopy} />
+                                                        </button>
+                                                        {/* Share buttons for both excuses and apologies */}
+                                                        <button onClick={() => handleShareWhatsApp(msg.text || msg.excuseText)} className="hover:text-green-500 transition-transform" title="Share via WhatsApp">
+                                                            <FontAwesomeIcon icon={faWhatsapp} />
+                                                        </button>
+                                                        <button onClick={() => handleShareSMS(msg.text || msg.excuseText)} className="hover:text-blue-400 transition-transform" title="Share via SMS">
+                                                            <FontAwesomeIcon icon={faSms} />
+                                                        </button>
+                                                        <button onClick={() => handleShareEmail(msg.text || msg.excuseText)} className="hover:text-rose-500 transition-transform" title="Share via Email">
+                                                            <FontAwesomeIcon icon={faEnvelope} />
+                                                        </button>
+                                                        {/* Only show favorite and worked buttons for excuses, not apologies */}
+                                                        {!isApology && (
+                                                            <>
+                                                                <button onClick={() => handleFavorite(msg._id)} className={`hover:scale-110 transition-transform ${msg.isFavorite ? 'text-yellow-400' : 'hover:text-yellow-400'}`} title="Favorite">
+                                                                    <FontAwesomeIcon icon={faStar} />
+                                                                </button>
+                                                                <div className="flex gap-2 items-center border-l border-base-content/20 pl-3 ml-2">
+                                                                    <span className="text-xs">Worked?</span>
+                                                                    <button onClick={() => handleRateExcuse(msg._id, 1)} disabled={msg.effectiveness !== 0} className={`hover:scale-110 transition-transform ${msg.effectiveness === 1 ? 'text-success' : 'hover:text-success'}`}> <FontAwesomeIcon icon={faThumbsUp} /> </button>
+                                                                    <button onClick={() => handleRateExcuse(msg._id, -1)} disabled={msg.effectiveness !== 0} className={`hover:scale-110 transition-transform ${msg.effectiveness === -1 ? 'text-error' : 'hover:text-error'}`}> <FontAwesomeIcon icon={faThumbsDown} /> </button>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        {isLoading && !excuseChoices.length && <span className="loading loading-dots loading-md text-primary self-start ml-4"></span>}
+                        {excuseChoices.length > 0 && !isLoading && (<ExcuseChoices choices={excuseChoices} onSelect={handleSelectExcuse} />)}
+                    </div>
+                    {/* Input Bar (stick to bottom of chat card) */}
+                    <div className="px-6 py-3 bg-base-200/30 mt-auto">
+                        <div className="relative">
+                            <div className="flex items-center gap-3 p-4 rounded-2xl bg-base-200/90 backdrop-blur-sm shadow-lg ring-2 ring-primary/30 relative">
+                                {/* Voice Input Button */}
+                                <button
+                                    onClick={handleVoiceInput}
+                                    className={`btn btn-circle btn-sm transition-all duration-300 ${isListening ? 'btn-error animate-pulse' : 'btn-ghost hover:bg-primary/10 hover:text-primary'}`}
+                                    title={isListening ? "Stop recording" : "Start voice input"}
+                                >
+                                    <FontAwesomeIcon icon={faMicrophone} />
+                                </button>
+                                {/* Text Input */}
+                                <div className="flex-1 relative">
+                                    <div className="rounded-xl bg-base-100/90 ring-2 ring-primary/40 shadow focus-within:ring-primary/80 transition-all">
+                                        <textarea
+                                            ref={inputRef}
+                                            className="textarea bg-transparent w-full resize-none border-none focus:outline-none focus:ring-0 p-2 text-base-content placeholder-base-content/60 text-base"
+                                            placeholder="Describe your situation and I'll help you craft the perfect excuse..."
+                                            rows="1"
+                                            value={input}
+                                            onChange={(e) => {
+                                                setInput(e.target.value);
+                                                // Auto-resize textarea
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                                                if (e.target.value.length < 10 || e.target.value.length > 500) {
+                                                    setInputError('Scenario must be between 10 and 500 characters.');
+                                                } else {
+                                                    setInputError('');
+                                                }
+                                            }}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleSend();
+                                                }
+                                            }}
+                                            disabled={isLoading}
+                                            style={{ minHeight: '44px', maxHeight: '120px' }}
+                                        />
+                                    </div>
+                                    {inputError && <div className="text-error text-xs mt-1">{inputError}</div>}
+                                </div>
+                                {/* Send Button */}
+                                <button
+                                    onClick={handleSend}
+                                    className={`btn btn-circle btn-sm transition-all duration-300 ${isLoading || !input.trim() ? 'btn-disabled opacity-50' : 'btn-primary hover:scale-110'}`}
+                                    disabled={isLoading || !input.trim()}
+                                    title="Send message"
+                                >
+                                    {isLoading ? (
+                                        <span className="loading loading-spinner loading-sm"></span>
+                                    ) : (
+                                        <FontAwesomeIcon icon={faPaperPlane} />
                                     )}
-                                    {msg.sender === 'ai' && msg._id && !msg.text?.startsWith("Sorry") && (
-                                        <>
-                                            <div className="flex gap-3 mt-2 items-center">
-                                                <button onClick={() => handleFavorite(msg._id)} className={`hover:scale-125 transition-transform ${msg.isFavorite ? 'text-yellow-400' : 'hover:text-yellow-400'}`} title="Favorite">
-                                                    <FontAwesomeIcon icon={faStar} />
-                                                </button>
-                                                <button onClick={() => speak(msg.excuseText)} className="hover:text-base-content hover:scale-125 transition-transform" title="Read Aloud">
-                                                    <FontAwesomeIcon icon={faVolumeUp} />
-                                                </button>
-                                                <button onClick={() => handleShareWhatsApp(msg.excuseText)} className="hover:text-green-500 hover:scale-125 transition-transform" title="Share via WhatsApp">
-                                                    <FontAwesomeIcon icon={faWhatsapp} />
-                                                </button>
-                                                <button onClick={() => handleShareSMS(msg.excuseText)} className="hover:text-blue-400 hover:scale-125 transition-transform" title="Share via SMS">
-                                                    <FontAwesomeIcon icon={faSms} />
-                                                </button>
-                                                <button onClick={() => handleShareEmail(msg.excuseText)} className="hover:text-rose-500 hover:scale-125 transition-transform" title="Share via Email">
-                                                    <FontAwesomeIcon icon={faEnvelope} />
-                                                </button>
-                                            </div>
-                                            <div className="flex gap-2 items-center border-l border-base-content/20 pl-3 ml-2 mt-2">
-                                                <span className="text-xs">Worked?</span>
-                                                <button onClick={() => handleRateExcuse(msg._id, 1)} disabled={msg.effectiveness !== 0} className={`hover:scale-125 transition-transform ${msg.effectiveness === 1 ? 'text-success' : 'hover:text-success'}`}>
-                                                    <FontAwesomeIcon icon={faThumbsUp} />
-                                                </button>
-                                                <button onClick={() => handleRateExcuse(msg._id, -1)} disabled={msg.effectiveness !== 0} className={`hover:scale-125 transition-transform ${msg.effectiveness === -1 ? 'text-error' : 'hover:text-error'}`}>
-                                                    <FontAwesomeIcon icon={faThumbsDown} />
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
+                                </button>
+                                {/* Apology Button */}
+                                <button
+                                    onClick={handleGenerateApology}
+                                    className="btn btn-circle btn-sm btn-accent ml-1"
+                                    title="Generate Apology"
+                                    disabled={isLoading}
+                                >
+                                    <FontAwesomeIcon icon={faWandMagicSparkles} />
+                                </button>
+                                {/* Proof Button */}
+                                <button
+                                    onClick={() => setProofModalOpen(true)}
+                                    className="btn btn-circle btn-sm btn-info ml-1"
+                                    title="Generate Proof"
+                                    disabled={isLoading}
+                                >
+                                    <FontAwesomeIcon icon={faFileShield} />
+                                </button>
+                                {/* Call Button */}
+                                <button
+                                    onClick={handleRealCall}
+                                    className="btn btn-circle btn-sm btn-warning ml-1"
+                                    title="Trigger Real Call"
+                                    disabled={isLoading}
+                                >
+                                    <FontAwesomeIcon icon={faPhone} />
+                                </button>
+                                {/* Subtle info icon triggers tooltip */}
+                                {effectiveExcuses.length > 0 && (
+                                    <div className="ml-1 flex items-center">
+                                        <FontAwesomeIcon
+                                            icon={faInfoCircle}
+                                            className="text-info cursor-pointer"
+                                            onMouseEnter={() => setShowTooltip(true)}
+                                            onMouseLeave={() => setShowTooltip(false)}
+                                            onFocus={() => setShowTooltip(true)}
+                                            onBlur={() => setShowTooltip(false)}
+                                            tabIndex={0}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            {/* Tooltip absolutely positioned above the input bar, full width */}
+                            {effectiveExcuses.length > 0 && showTooltip && (
+                                <div className="absolute left-0 right-0 bottom-full mb-2 px-4 py-3 rounded-lg bg-base-200 border border-info text-info text-xs z-50 shadow-lg" style={{ minWidth: '220px' }}>
+                                    <strong>Personalized AI:</strong><br />
+                                    <ul className="list-disc ml-5 mt-1">
+                                        {effectiveExcuses.slice(0, 3).map((e, i) => (
+                                            <li key={i} className="truncate">{e.excuseText}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {/* Character Count */}
+                            {input.length > 0 && (
+                                <div className="absolute -bottom-6 right-0 text-xs text-base-content/50">
+                                    {input.length} characters
                                 </div>
                             )}
                         </div>
-                    ))}
-                    {isLoading && !excuseChoices.length && <span className="loading loading-dots loading-md text-primary self-start ml-4"></span>}
-                    {excuseChoices.length > 0 && !isLoading && (<ExcuseChoices choices={excuseChoices} onSelect={handleSelectExcuse} />)}
-                </div>
-                {/* Input Bar */}
-                <div className="px-6 py-3 border-t border-base-300/50 bg-base-200/30">
-                    <div className="relative">
-                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-base-200/80 backdrop-blur-sm border border-base-300/50 shadow-lg">
-                            {/* Voice Input Button */}
-                            <button
-                                onClick={handleVoiceInput}
-                                className={`btn btn-circle btn-sm transition-all duration-300 ${isListening ? 'btn-error animate-pulse' : 'btn-ghost hover:bg-primary/10 hover:text-primary'}`}
-                                title={isListening ? "Stop recording" : "Start voice input"}
-                            >
-                                <FontAwesomeIcon icon={faMicrophone} />
-                            </button>
-                            {/* Text Input */}
-                            <div className="flex-1 relative">
-                                <textarea
-                                    ref={inputRef}
-                                    className="textarea bg-transparent w-full resize-none border-none focus:outline-none focus:ring-0 p-2 text-base-content placeholder-base-content/60 text-base"
-                                    placeholder="Describe your situation and I'll help you craft the perfect excuse..."
-                                    rows="1"
-                                    value={input}
-                                    onChange={(e) => {
-                                        setInput(e.target.value);
-                                        // Auto-resize textarea
-                                        e.target.style.height = 'auto';
-                                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                                        if (e.target.value.length < 10 || e.target.value.length > 500) {
-                                            setInputError('Scenario must be between 10 and 500 characters.');
-                                        } else {
-                                            setInputError('');
-                                        }
-                                    }}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSend();
-                                        }
-                                    }}
-                                    disabled={isLoading}
-                                    style={{ minHeight: '44px', maxHeight: '120px' }}
-                                />
-                                {inputError && <div className="text-error text-xs mt-1">{inputError}</div>}
-                            </div>
-                            {/* Send Button */}
-                            <button
-                                onClick={handleSend}
-                                className={`btn btn-circle btn-sm transition-all duration-300 ${isLoading || !input.trim() ? 'btn-disabled opacity-50' : 'btn-primary hover:scale-110'}`}
-                                disabled={isLoading || !input.trim()}
-                                title="Send message"
-                            >
-                                {isLoading ? (
-                                    <span className="loading loading-spinner loading-sm"></span>
-                                ) : (
-                                    <FontAwesomeIcon icon={faPaperPlane} />
-                                )}
-                            </button>
-                        </div>
-                        {/* Character Count */}
-                        {input.length > 0 && (
-                            <div className="absolute -bottom-6 right-0 text-xs text-base-content/50">
-                                {input.length} characters
-                            </div>
-                        )}
                     </div>
                 </div>
+                {/* Proof Generation Modal */}
+                <Modal
+                    isOpen={proofModalOpen}
+                    onRequestClose={() => setProofModalOpen(false)}
+                    contentLabel="Generate Proof"
+                    className="modal-content"
+                    overlayClassName="modal-overlay"
+                    ariaHideApp={false}
+                >
+                    <div className="p-6 bg-base-100 rounded-xl shadow-xl max-w-md mx-auto">
+                        <h3 className="text-lg font-bold mb-4">Generate Proof</h3>
+                        <div className="mb-3">
+                            <label className="block text-sm font-medium mb-1">Platform</label>
+                            <select
+                                className="select select-sm w-full"
+                                value={selectedPlatform}
+                                onChange={e => setSelectedPlatform(e.target.value)}
+                            >
+                                {platformOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="mb-3 flex gap-2">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1">Sender Name</label>
+                                <input
+                                    className="input input-sm w-full"
+                                    value={senderName}
+                                    onChange={e => setSenderName(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1">Receiver Name</label>
+                                <input
+                                    className="input input-sm w-full"
+                                    value={receiverName}
+                                    onChange={e => setReceiverName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="mb-3 flex gap-2 items-center">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1">Sender Avatar</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="file-input file-input-sm w-full"
+                                    onChange={e => handleAvatarFile(e, setSenderAvatarFile, setSenderAvatar)}
+                                />
+                                {senderAvatarFile && <img src={senderAvatarFile} alt="Sender Avatar" className="w-10 h-10 rounded-full mt-1" />}
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1">Receiver Avatar</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="file-input file-input-sm w-full"
+                                    onChange={e => handleAvatarFile(e, setReceiverAvatarFile, setReceiverAvatar)}
+                                />
+                                {receiverAvatarFile && <img src={receiverAvatarFile} alt="Receiver Avatar" className="w-10 h-10 rounded-full mt-1" />}
+                            </div>
+                        </div>
+                        <div className="flex gap-2 mt-4 justify-end">
+                            <button className="btn btn-ghost btn-sm" onClick={() => setProofModalOpen(false)}>Cancel</button>
+                            <button
+                                className="btn btn-info btn-sm"
+                                onClick={() => { setProofModalOpen(false); handleGenerateProof(); }}
+                                disabled={isLoading}
+                            >
+                                Generate Proof
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
             </div>
         </div>
     );
