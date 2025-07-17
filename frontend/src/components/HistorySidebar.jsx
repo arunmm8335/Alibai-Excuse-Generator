@@ -6,6 +6,7 @@ import SkeletonCard from './SkeletonCard'; // Import the new component
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
+import api from '../api';
 
 const HistorySidebar = () => {
     const { t } = useTranslation();
@@ -29,8 +30,8 @@ const HistorySidebar = () => {
         const config = { headers: { 'x-auth-token': token } };
         try {
             const [historyRes, patternRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/excuses/history', config),
-                axios.get('http://localhost:5000/api/excuses/pattern', config)
+                api.get('/excuses/history', config),
+                api.get('/excuses/pattern', config)
             ]);
             setHistory(historyRes.data);
             if (patternRes.data.suggestion) { setSuggestion(patternRes.data.suggestion); }
@@ -42,7 +43,7 @@ const HistorySidebar = () => {
     const handleDelete = async (excuseId) => {
         const originalHistory = [...history];
         setHistory(currentHistory => currentHistory.filter(item => item._id !== excuseId));
-        const promise = axios.delete(`http://localhost:5000/api/excuses/${excuseId}`, { headers: { 'x-auth-token': localStorage.getItem('token') } });
+        const promise = api.delete(`/excuses/${excuseId}`, { headers: { 'x-auth-token': localStorage.getItem('token') } });
         toast.promise(promise, {
             loading: 'Deleting...',
             success: 'Excuse deleted!',
