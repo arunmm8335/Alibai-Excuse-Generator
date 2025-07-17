@@ -11,7 +11,7 @@ const { validateComment, handleValidationErrors } = require('../middleware/valid
 // @access  Private
 router.post('/generate-stream', [auth, getOpenAIClient], async (req, res) => {
     // By the time this function runs, req.openai is already correctly set by the middleware
-    const { scenario, context, urgency, language } = req.body;
+    const { scenario, context, urgency, language, examplesPrompt } = req.body;
 
     console.log('Generate stream request:', { scenario, context, urgency, language });
 
@@ -24,6 +24,9 @@ router.post('/generate-stream', [auth, getOpenAIClient], async (req, res) => {
     }
 
     let systemPrompt = `You are Alibai, an intelligent excuse generator. Generate one single, high-quality, creative excuse for the user's situation. Be concise and natural-sounding. Generate the excuse in ${language || 'English'}. Do not add any extra commentary, introductory phrases, or formatting like numbering.`;
+    if (examplesPrompt) {
+        systemPrompt += examplesPrompt;
+    }
 
     try {
         const successfulExcuses = await Excuse.find({ user: req.user.id, effectiveness: 1 }).sort({ createdAt: -1 }).limit(2);
@@ -280,6 +283,12 @@ router.get('/public', async (req, res) => {
                 { excuseText: { $regex: req.query.search, $options: 'i' } },
                 { scenario: { $regex: req.query.search, $options: 'i' } }
             ];
+        }
+        // Use exact match for context (category) filter
+        if (req.query.context) {
+            filter.context = req.query.context;
+            // To revert to partial match, use:
+            // filter.context = { $regex: req.query.context, $options: 'i' };
         }
 
         const total = await Excuse.countDocuments(filter);
