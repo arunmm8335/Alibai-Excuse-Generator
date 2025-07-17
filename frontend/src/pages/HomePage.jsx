@@ -31,6 +31,25 @@ const HomePage = () => {
     };
     useEffect(() => {
         fetchHistory();
+        // Predictive notification
+        const fetchPatterns = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const res = await api.get('/users/profile/patterns', { headers: { 'x-auth-token': token } });
+                if (res.data.patterns) {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    const day = now.getDay();
+                    const toastKey = `pattern-toast-${hour}-${day}`;
+                    if ((hour === res.data.patterns.hour || day === res.data.patterns.day) && !sessionStorage.getItem(toastKey)) {
+                        toast('You often need an excuse around this time. Need one now?');
+                        sessionStorage.setItem(toastKey, 'shown');
+                    }
+                }
+            } catch { }
+        };
+        fetchPatterns();
     }, []);
 
     const handleSettingsChange = (newSettings) => {
@@ -191,25 +210,28 @@ const HomePage = () => {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Top padding for fixed navbar */}
-            <div className="flex-1 flex flex-col pt-[64px] space-y-2 px-0 md:px-0 py-2 pb-24"> {/* Remove horizontal padding for full width */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 bg-base-200 flex-1 h-full w-full overflow-x-auto"> {/* Add w-full */}
-                    {/* Left Sidebar (History) - Spans 3 of 12 columns on large screens */}
-                    <div className="lg:col-span-3 order-1 lg:order-1 h-full">
+            <div className="flex-1 flex flex-col pt-[64px]">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch justify-center min-h-[80vh] w-full px-2 md:px-8 mt-6">
+                    {/* Left Sidebar (History) */}
+                    <div className="lg:col-span-3 order-1 lg:order-1 min-h-[500px] max-h-[80vh] rounded-2xl shadow border border-base-300 p-4 flex flex-col">
                         <HistorySidebar />
                     </div>
-                    {/* Center Content (Chat) - Spans 6 of 12 columns */}
-                    <div className="lg:col-span-6 order-2 flex flex-col flex-1 h-full w-full max-w-full" id="main-chat">
+                    {/* Center Content (Chat) */}
+                    <div className="lg:col-span-6 order-3 lg:order-2 flex flex-col min-h-[500px] max-h-[80vh] h-full min-h-0">
                         <ChatInterface
                             settings={settings}
-                            history={history}
-                            setHistory={setHistory}
                             fetchHistory={fetchHistory}
                             lastExcuse={lastExcuse}
                             setLastExcuse={setLastExcuse}
+                            messages={messages}
+                            addMessageToChat={addMessageToChat}
+                            updateMessages={updateMessages}
                             currentScenario={currentScenario}
                             setCurrentScenario={setCurrentScenario}
                             runSettings={runSettings}
                             setRunSettings={setRunSettings}
+                            selectedPlatform={selectedPlatform}
+                            setSelectedPlatform={setSelectedPlatform}
                             senderName={senderName}
                             setSenderName={setSenderName}
                             receiverName={receiverName}
@@ -222,97 +244,11 @@ const HomePage = () => {
                             setSenderAvatarFile={setSenderAvatarFile}
                             receiverAvatarFile={receiverAvatarFile}
                             setReceiverAvatarFile={setReceiverAvatarFile}
-                            messages={messages}
-                            addMessageToChat={addMessageToChat}
-                            updateMessages={updateMessages}
                         />
                     </div>
-                    {/* Right Sidebar (Settings + Actions) - Spans 3 of 12 columns */}
-                    <div className="lg:col-span-3 order-2 lg:order-3 flex flex-col gap-4 sticky top-[80px] h-fit">
-                        <SettingsSidebar
-                            settings={settings}
-                            onSettingsChange={handleSettingsChange}
-                        />
-                        <div className="card bg-base-100 shadow-lg border border-base-300 p-4 flex flex-col gap-3">
-                            <div className="flex flex-row gap-4 items-center justify-center mb-2">
-                                <div className="flex flex-col items-center gap-1">
-                                    <label className="text-xs font-semibold">Me</label>
-                                    {senderAvatarFile && (
-                                        <img src={senderAvatarFile} alt="Me avatar" className="w-8 h-8 rounded-full object-cover border border-base-300" />
-                                    )}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="file-input file-input-xs w-16"
-                                        onChange={e => handleAvatarFile(e, setSenderAvatarFile, setSenderAvatar)}
-                                    />
-                                    <input
-                                        className="input input-xs w-16 mt-1"
-                                        value={senderName}
-                                        onChange={e => setSenderName(e.target.value)}
-                                        placeholder="Me"
-                                    />
-                                </div>
-                                <div className="flex flex-col items-center gap-1">
-                                    <label className="text-xs font-semibold">Other</label>
-                                    {receiverAvatarFile && (
-                                        <img src={receiverAvatarFile} alt="Other avatar" className="w-8 h-8 rounded-full object-cover border border-base-300" />
-                                    )}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="file-input file-input-xs w-16"
-                                        onChange={e => handleAvatarFile(e, setReceiverAvatarFile, setReceiverAvatar)}
-                                    />
-                                    <input
-                                        className="input input-xs w-16 mt-1"
-                                        value={receiverName}
-                                        onChange={e => setReceiverName(e.target.value)}
-                                        placeholder="Other"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex flex-row items-center gap-2 mb-2">
-                                <span className="font-semibold text-xs whitespace-nowrap">Proof Style</span>
-                                <select
-                                    id="platform-select"
-                                    className="select select-xs w-full"
-                                    value={selectedPlatform}
-                                    onChange={e => setSelectedPlatform(e.target.value)}
-                                >
-                                    {platformOptions.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <button
-                                onClick={handleGenerateApology}
-                                className="btn btn-secondary btn-xs gap-2 w-full"
-                                disabled={!lastExcuse || sidebarLoading}
-                                title="Generate Apology"
-                            >
-                                <FontAwesomeIcon icon={faWandMagicSparkles} />
-                                Apology
-                            </button>
-                            <button
-                                onClick={handleGenerateProof}
-                                className="btn btn-accent btn-xs gap-2 w-full"
-                                disabled={!lastExcuse || sidebarLoading}
-                                title="Generate Proof"
-                            >
-                                <FontAwesomeIcon icon={faFileShield} />
-                                Proof
-                            </button>
-                            <button
-                                onClick={handleRealCall}
-                                className="btn btn-warning btn-xs gap-2 w-full"
-                                disabled={!lastExcuse || sidebarLoading}
-                                title="Trigger Real Call"
-                            >
-                                <FontAwesomeIcon icon={faPhone} />
-                                Call
-                            </button>
-                        </div>
+                    {/* Right Sidebar (Settings) */}
+                    <div className="lg:col-span-3 order-2 lg:order-3 min-h-[500px] max-h-[80vh] rounded-2xl shadow border border-base-300 p-4 flex flex-col mt-32">
+                        <SettingsSidebar settings={settings} onSettingsChange={handleSettingsChange} />
                     </div>
                 </div>
             </div>
