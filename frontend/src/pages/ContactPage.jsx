@@ -55,14 +55,14 @@ const ContactPage = () => {
                     </div>
                 </div>
                 {/* --- RIGHT SIDE: Get in Touch --- */}
-                <div className="card bg-base-200 p-8 shadow-xl">
+                <div className="card bg-base-200 p-8 rounded-3xl" style={{ border: '2px solid #a3a3a3', boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)', minWidth: '320px', minHeight: '420px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <h3 className="text-2xl font-bold mb-6">Get In Touch</h3>
                     <div className="space-y-5">
                         <ContactLink href="mailto:arunmyageri1916@gmail.com" icon={<EnvelopeSimple size={24} weight="duotone" />}>
                             arunmyageri1916@gmail.com
                         </ContactLink>
                         <ContactLink href="tel:+918062181856" icon={<Phone size={24} weight="duotone" />}>
-                            +91 8431477068
+                            +91 80621 81856
                         </ContactLink>
                         <div className="divider my-4"></div>
                         <div className="flex items-start gap-3">
