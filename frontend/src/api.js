@@ -11,4 +11,5 @@ const api = axios.create({
     // You can add default headers here if needed
 });
 
+export { baseURL };
 export default api; 
