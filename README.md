@@ -19,12 +19,10 @@
 - [Usage Guide](#usage-guide)
 - [Project Structure](#project-structure)
 - [API Endpoints](#api-endpoints)
-- [Docker Deployment](#docker-deployment)
-- [Contributing](#contributing)
+- [Deployment](#deployment)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
-- [Support](#support)
-- [Live Demo](#live-demo)
+
 
 ---
 
@@ -35,7 +33,7 @@
 - **Community & Moderation**: Community wall, like/comment system, user profiles, moderator panel, and content reporting.
 - **Modern UI/UX**: Responsive design, dark/light themes, smooth animations, accessibility, and iconography.
 - **Security & User Management**: JWT authentication, user tiers (Free/Pro), encrypted API key storage, rate limiting, and input validation.
-- **Deployment Ready**: Dockerized, multi-stage builds, Docker Compose, health checks, and environment-based configuration.
+- **Deployment Ready**: Multi-platform deployment support (Vercel, Render), health checks, and environment-based configuration.
 
 ---
 
@@ -60,22 +58,14 @@
 - CryptoJS
 
 **DevOps & Tooling:**
-- Docker, Docker Compose
+- Vercel (Frontend Hosting)
+- Render (Backend Hosting)
 - GitHub Actions (CI/CD ready)
 - ESLint, Prettier
 
 ---
 
 ## Getting Started
-
-### Docker (Recommended)
-```bash
-git clone https://github.com/arunmm8335/ExcuseMe-Excuse-Generator.git
-cd ExcuseMe-Excuse-Generator
-docker compose up --build
-```
-- Frontend: http://localhost
-- Backend: http://localhost:5000
 
 ### Local Development
 ```bash
@@ -117,7 +107,8 @@ NODE_ENV=development
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-VITE_API_URL=http://localhost:5000 (for localHost comment out for production)
+VITE_API_URL=https://your-backend-service.onrender.com (for production)
+# VITE_API_URL=http://localhost:5000 (for local development)
 ```
 
 ---
@@ -186,36 +177,27 @@ launchizd-excuse-generator/
 
 ---
 
-## Docker Deployment
+## Deployment
 
-**Development:**
-```bash
-docker compose -f docker-compose.dev.yml up --build
-```
+### Frontend (Vercel)
+1. Go to [Vercel](https://vercel.com/) and sign in with your GitHub account.
+2. Click "New Project" and import your repository.
+3. Set the project root to the `frontend` directory.
+4. Add the required environment variables from the `.env` example above.
+5. Set the `VITE_API_URL` to your Render backend URL (e.g., `https://your-backend-service.onrender.com`).
+6. Deploy the project. Vercel will provide a live URL for your frontend.
 
-**Production:**
-```bash
-docker compose up --build
-```
+### Backend (Render)
+1. Go to [Render](https://render.com/) and sign in with your GitHub account.
+2. Click "New Web Service" and connect your repository.
+3. Set the project root to the `backend` directory.
+4. Set the build command to `npm install` and the start command to `npm start`.
+5. Add all required environment variables from the `.env` example above.
+6. Deploy the service. Render will provide a live URL for your backend API.
 
-Set environment variables in `.env` or via your deployment platform.
-
----
-
-## Contributing
-
-We welcome contributions! To contribute:
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m 'Add feature'`
-4. Push to your branch: `git push origin feature/your-feature`
-5. Open a Pull Request
-
-**Guidelines:**
-- Follow code style
-- Add tests for new features
-- Update documentation
-- Ensure all tests pass
+### Environment Variables
+- Set all required environment variables in the respective platform dashboards (Vercel for frontend, Render for backend).
+- Ensure the frontend `VITE_API_URL` matches the deployed backend Render URL.
 
 ---
 
@@ -237,11 +219,6 @@ This project is licensed under the [MIT License](LICENSE.md).
 - [GitHub Discussions](https://github.com/arunmm8335/ExcuseMe-Excuse-Generator/discussions)
 - Contact via GitHub profile
 
----
-
-## Live Demo
-
-**Coming Soon!**
 
 ---
 
