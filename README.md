@@ -108,16 +108,16 @@ ENCRYPTION_SECRET=your-encryption-secret-key
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
 TWILIO_PHONE_NUMBER=your_twilio_phone_number
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 PORT=5000
 NODE_ENV=development
 ```
 
 ### Frontend `.env` Example
 ```env
-VITE_API_URL=http://localhost:5000
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+VITE_API_URL=http://localhost:5000 (for localHost comment out for production)
 ```
 
 ---
