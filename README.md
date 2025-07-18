@@ -193,7 +193,8 @@ launchizd-excuse-generator/
 3. Set the project root to the `backend` directory.
 4. Set the build command to `npm install` and the start command to `npm start`.
 5. Add all required environment variables from the `.env` example above.
-6. Deploy the service. Render will provide a live URL for your backend API.
+6. Add Frontend URI (1 & 2) of vercel domains.
+7. Deploy the service. Render will provide a live URL for your backend API.
 
 ### Environment Variables
 - Set all required environment variables in the respective platform dashboards (Vercel for frontend, Render for backend).
